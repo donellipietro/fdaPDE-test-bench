@@ -1,0 +1,11 @@
+{
+  "RunParams": {
+    "fpca_solver": "subspace",
+    "n_pc": 3,
+    "lambda_grid": [1]
+  },
+  "Path": {
+    "data": "/Users/marcogalliani/Projects/fdaPDE-test-bench/cpp-scripts/data",
+    "mesh": "/Users/marcogalliani/Projects/fdaPDE-test-bench/cpp-scripts/mesh"
+  }
+}

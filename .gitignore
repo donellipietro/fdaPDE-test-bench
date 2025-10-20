@@ -3,13 +3,20 @@
 *.DS_Store
 *.txt
 *.pdf
+*.Rproj
+*.csv
 
-# directories to ignore3
+
+# directories to ignore
 results/
 images/
 queue/
 data/*
+cpp-scripts/**/test-results/
+test/**/cpp-scripts/
+.idea/ 
 
 # exceptions
 !data/mesh/
 !data/mesh/**
+.Rproj.user

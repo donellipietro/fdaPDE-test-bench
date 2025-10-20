@@ -69,11 +69,7 @@ SpatialPCA_wrapped <- function(data, n_comp = 3) {
   ))
 }
 
-
-MV_PCA_wrapped <- function(data, center = TRUE, n_comp = 3) {
-  ## data
-  X <- data$X
-  
+MV_PCA_wrapped <- function(X, center = TRUE, n_comp = 3) {
   ## centering
   X_mean_locs <- rep(0, ncol(X))
   if(center) {

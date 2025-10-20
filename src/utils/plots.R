@@ -12,7 +12,8 @@ standard_plot_settings <- function() {
         size = 14,
         hjust = 0.5,
         vjust = 1
-      )
+      ),
+      legend.position = "top",
     )
 }
 
@@ -35,7 +36,7 @@ standard_plot_settings_fields <- function() {
       axis.ticks.y = element_blank(),
       panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(),
-      legend.position = "bottom",
+      legend.text.position = "top",
       legend.title = element_blank(),
       legend.text = element_text(angle = 45, hjust = 1)
     )
@@ -152,7 +153,6 @@ plot.field_points <- function(locations, f, boundary = NULL,
 }
 
 ## plot field: tile version
-
 plot.field_tile <- function(nodes, f, boundary = NULL,
                             limits = NULL, breaks = NULL, colormap = "D",
                             discrete = FALSE, ISOLINES = FALSE, LEGEND = FALSE) {
@@ -280,10 +280,15 @@ plot.grouped_boxplots <- function(data,
     mutate(SubGroup = factor(SubGroup, levels = subgroup_levels, labels = subgroup_labels))
   
   ## grouped box-plot
-  plot <- ggplot(data = data, aes(x = Group, y = Score, fill = SubGroup)) +
+  plot <- ggplot(data = data, aes(x = Group, y = Score, fill = SubGroup, color = SubGroup)) +
     geom_boxplot(na.rm = TRUE) +
     labs(x = group_name, y = values_name) +
     scale_fill_manual(
+      name = subgroup_name,
+      values = subgroup_colors,
+      labels = subgroup_labels
+    ) +
+    scale_color_manual(
       name = subgroup_name,
       values = subgroup_colors,
       labels = subgroup_labels
@@ -487,6 +492,98 @@ labled_plots_grid <- function(plot, title = NULL, labels_cols = NULL, labels_row
   ## add title
   if(!is.null(title)) {
     plot <- arrangeGrob(title_grob, plot, heights = c(1, add + height * n_row))
+  }
+  
+  return(plot)
+}
+
+## grouped violin-plot ----
+# Input format:
+# Group | Model1 | ... | ModelN
+# Output:
+# violin-plot grouped by Group with levels {Model1, ..., ModelN}
+
+plot.grouped_violins <- function(data,
+                                 ## groups options
+                                 group_name = "Components", group_labels = NULL,
+                                 ## subgroup options
+                                 subgroup_name = "Models", subgroup_labels = NULL, subgroup_colors = NULL,
+                                 values_name = "Score",
+                                 ## limits
+                                 limits = NULL,
+                                 ## options
+                                 DIVIDERS = TRUE, LEGEND = TRUE,
+                                 show_boxplot = TRUE) {
+  ## data integrity check
+  if (!("Group" %in% names(data))) stop("The dataframe must contain a column named 'Group'")
+  
+  ## data reformat
+  data <- data %>%
+    pivot_longer(cols = -Group, names_to = "SubGroup", values_to = "Score")
+  
+  ## extract names
+  groups_levels <- unique(data$Group)
+  subgroup_levels <- unique(data$SubGroup)
+  if (is.null(group_labels)) {
+    group_labels <- groups_levels
+  }
+  if (is.null(subgroup_labels)) {
+    subgroup_labels <- subgroup_levels
+  }
+  
+  ## add association between subgroup_labels and subgroup_colors
+  if (is.null(subgroup_colors)) {
+    subgroup_colors <- rainbow(length(subgroup_labels))
+  }
+  names(subgroup_colors) <- subgroup_labels
+  
+  ## refactor categorical variables
+  data <- data %>%
+    mutate(Group = factor(Group, levels = groups_levels, labels = group_labels)) %>%
+    mutate(SubGroup = factor(SubGroup, levels = subgroup_levels, labels = subgroup_labels))
+  
+  ## grouped violin-plot
+  plot <- ggplot(data = data, aes(x = Group, y = Score, fill = SubGroup)) +
+    geom_violin(trim = FALSE, width = 1.5, position = position_dodge(width = 0.8), na.rm = TRUE, alpha = 0.8) +
+    labs(x = group_name, y = values_name) +
+    scale_fill_manual(
+      name = subgroup_name,
+      values = subgroup_colors,
+      labels = subgroup_labels
+    )
+  
+  ## optionally overlay a boxplot inside each violin
+  if (show_boxplot) {
+    plot <- plot +
+      geom_boxplot(
+        width = 0.15,
+        position = position_dodge(width = 0.8),
+        outlier.shape = NA,
+        alpha = 0.6
+      )
+  }
+  
+  ## y-limits if requested
+  if (!is.null(limits)) {
+    plot <- plot + scale_y_continuous(
+      limits = limits
+    )
+  }
+  
+  ## add groups divider if required
+  if (DIVIDERS) {
+    if (length(group_labels) > 1) {
+      plot <- plot +
+        geom_vline(
+          xintercept = seq(1.5, length(unique(group_labels)) - 0.5, 1),
+          lwd = 0.2, colour = "grey"
+        )
+    }
+  }
+  
+  ## legend control
+  if (!LEGEND) {
+    plot <- plot + guides(fill = "none")
   }
   
   return(plot)

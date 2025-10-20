@@ -1,5 +1,4 @@
 ## utils
-
 import_mesh_data <- function(path) {
   mesh_data <- list(
     nodes = as.matrix(read.csv(paste(path, "points.csv", sep = ""))[, -1]),
@@ -23,9 +22,7 @@ evaluate_field <- function(grid, f_at_nodes, mesh) {
   return(f_at_grid)
 }
 
-
 ## mesh generators
-
 unit_square <- function(n_nodes) {
   x <- y <- seq(0, 1, length = sqrt(n_nodes))
   grid <- meshgrid(x, y)
@@ -39,4 +36,10 @@ unit_square <- function(n_nodes) {
     boundary = as.matrix(as.numeric(mesh$nodesmarkers))
   )
   return(mesh_data)
+}
+
+## unit interval
+unit_interval <- function(n_nodes){
+  x <- seq(0, 1, length = n_nodes)
+  return(x)
 }

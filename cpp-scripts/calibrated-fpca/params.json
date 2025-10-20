@@ -1,11 +1,11 @@
 {
   "RunParams": {
     "fpca_solver": "direct",
-    "n_pc": 3,
-    "lambda_grid": [1e-05, 3.1622776602e-05, 0.0001, 0.00031622776602, 0.001, 0.0031622776602, 0.01, 0.031622776602, 0.1, 0.31622776602, 1, 3.1622776602, 10, 31.6227766017, 100]
+    "n_pc": 5,
+    "lambda_grid": [1e-06, 1e-05, 0.0001, 0.001, 0.01, 0.1, 1, 10]
   },
   "Path": {
-    "data": "/Users/marcogalliani/Projects/fdaPDE-test-bench/tests/subspace-it/cpp-scripts/data/",
-    "mesh": "/Users/marcogalliani/Projects/fdaPDE-test-bench/tests/subspace-it/cpp-scripts/mesh/"
+    "data": "/Users/marcogalliani/Projects/fdaPDE-test-bench/cpp-scripts/data",
+    "mesh": "/Users/marcogalliani/Projects/fdaPDE-test-bench/cpp-scripts/mesh"
   }
 }

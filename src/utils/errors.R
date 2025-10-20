@@ -6,6 +6,11 @@ norm_l2 <- function(x) {
   return(sqrt(as.numeric(t(x) %*% x)))
 }
 
+norm_L2 <- function(x, R0) {
+  return(sqrt(as.numeric(t(x) %*% R0 %*% x)))
+}
+
+
 RMSE <- function(x) {
   x <- as.matrix(x)
   n_stat_unit <- ncol(x)

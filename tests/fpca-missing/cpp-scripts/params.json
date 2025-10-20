@@ -1,0 +1,10 @@
+{
+  "RunParams": {
+    "n_pc": 3,
+    "lambda_grid": [1e-05, 0.0001, 0.001, 0.01]
+  },
+  "Path": {
+    "data": "/Users/marcogalliani/Projects/fdaPDE-test-bench/tests/fpca-missing/cpp-scripts/data/",
+    "mesh": "/Users/marcogalliani/Projects/fdaPDE-test-bench/tests/fpca-missing/cpp-scripts/mesh/"
+  }
+}
