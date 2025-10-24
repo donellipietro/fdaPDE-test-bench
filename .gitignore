@@ -6,14 +6,11 @@
 *.Rproj
 *.csv
 
-
 # directories to ignore
 results/
 images/
 queue/
 data/*
-cpp-scripts/**/test-results/
-test/**/cpp-scripts/
 .idea/ 
 
 # exceptions

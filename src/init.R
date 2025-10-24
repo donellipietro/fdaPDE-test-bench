@@ -1,35 +1,50 @@
-# % %%%%%%%%%%%%%%%%%%%%%%% %
-# % % Test initialization % %
-# % %%%%%%%%%%%%%%%%%%%%%%% %
+# = ========================================================================== =
+# - Script: init.R
+# - Desc: Initializes a test run by parsing CLI arguments, preparing
+#         directories, and generating JSON option files for the selected test.
+# = ========================================================================== =
 
-rm(list = ls())
-
-## libraries ----
+# Libraries ----
 suppressMessages(library(jsonlite))
+suppressMessages(library(RColorBrewer))
 
-## sources ----
+# Sources ----
+source("src/utils/options.R")
 source("src/utils/directories.R")
 
+# Select test ----
 
-## directories ----
-path_options <- paste("queue/", sep = "")
-mkdir(c(path_options))
-
-
-## options ----
-
-## check arguments passed by terminal
+## Read arguments passed from the terminal
 args <- commandArgs(trailingOnly = TRUE)
+
+## Parse the arguments, if any
 if (length(args) == 0) {
-  args[1] <- "example"
-  args[2] <- "test1"
+  ## Defaults
+  test_suite     <- "example_data_decomposition"
+  name_main_test <- "test1"
+} else {
+  ## Set the requested configuration
+  test_suite     <- args[1]
+  name_main_test <- args[2]
 }
 
-## main test name
-name_test_main <- args[2]
-cat(paste("\nTest selected:", name_test_main, "\n"))
+## Print selected test info
+cat("\n")
+cat(paste("Test suite:", test_suite, "\n"))
+cat(paste("Test name:", name_main_test, "\n"))
+cat("\n")
 
+# Generate options ----
 
-## generation ----
-source(paste("tests/", args[1], "/utils/generate_options.R", sep = ""))
-generate_options(name_test_main, path_options)
+## Update directories according to the selected test
+mkdir(c("tmp/", "tmp/queue/"))
+path_queue <- paste0("tmp/queue/", test_suite, "/")
+mkdir(path_queue)
+path_queue <- paste0(path_queue, name_main_test, "/")
+mkdir(path_queue)
+
+## Load the option-generation function
+source(paste("tests/", test_suite, "/utils/generate_options.R", sep = ""))
+
+## Generate all the options for the selected test
+generate_options(test_suite, name_main_test, path_queue)
