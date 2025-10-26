@@ -97,16 +97,19 @@ clean: clean_tmp
 # - usage: make clean_test TEST_SUITE=centering TEST_NAME=test1
 clean_test:
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
-		echo "\nUsage: make clean_test TEST_SUITE=<suite> TEST_NAME=<test_name>\n"; \
+		echo "Usage: make clean_test TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
+		echo ""; \
 		echo "Available TEST_SUITEs:"; \
-		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | sed 's/^/- /'; \
+		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
+		sed 's/^\(.*\)/- \1 (make clean_test TEST_SUITE=\1 TEST_NAME=<test_name>)/'; \
 		echo ""; \
 		exit 0; \
 	else \
-		echo "\nCleaning results and images for test: $(TEST_NAME) from suite: $(TEST_SUITE)"; \
+		echo "Cleaning results and images for test: $(TEST_NAME) from suite: $(TEST_SUITE)"; \
 		$(RM) -r results/$(TEST_SUITE)/$(TEST_NAME); \
 		$(RM) -r images/$(TEST_SUITE)/$(TEST_NAME); \
-		echo "Cleanup completed for test: $(TEST_NAME)\n"; \
+		$(RM) -r data/tests/$(TEST_SUITE)/$(TEST_NAME); \
+		echo "Cleanup completed for test: $(TEST_NAME)"; \
 	fi
 	
 ## DANGER ZONE: Full cleanup of all generated files
@@ -116,6 +119,7 @@ distclean: clean clean_compiled
 	@echo "Removing additional generated files..."
 	@$(RM) -r images/
 	@$(RM) -r results/
+	@$(RM) -r data/tests/
 	@echo "Additional cleanup completed.\n"
 
 # Test targets ----
@@ -127,7 +131,8 @@ run_test: build
 		echo "Usage: make run_test TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
 		echo ""; \
 		echo "Available TEST_SUITEs:"; \
-		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | sed 's/^/- /'; \
+		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
+		sed 's/^\(.*\)/- \1 (make run_test TEST_SUITE=\1 TEST_NAME=<test_name>)/'; \
 		echo ""; \
 		exit 0; \
 	else \
@@ -142,7 +147,8 @@ run_test_parallel: build
 		echo "Usage: make run_test_parallel TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
 		echo ""; \
 		echo "Available TEST_SUITEs:"; \
-		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | sed 's/^/- /'; \
+		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
+		sed 's/^\(.*\)/- \1 (make run_test_parallel TEST_SUITE=\1 TEST_NAME=<test_name>)/'; \
 		echo ""; \
 		exit 0; \
 	else \

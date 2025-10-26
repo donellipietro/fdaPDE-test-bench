@@ -52,13 +52,13 @@ MVPCA <- function(data, test_options) {
   X_hat_locs <- scores %*% t(loadings_locs)
   
   # Save results ----
-  model$results$loadings        <- NULL
-  model$results$loadings_locs   <- loadings_locs
-  model$results$scores          <- scores
-  model$results$X_hat           <- NULL
-  model$results$X_hat_locs      <- X_hat_locs
-  model$results$lambda          <- rep(0, n_comp)
-  model$results$execution_time  <- end.time - start.time
+  model$results$loadings <- NULL
+  model$results$loadings_locs <- loadings_locs
+  model$results$scores <- scores
+  model$results$X_hat <- NULL
+  model$results$X_hat_locs <- X_hat_locs
+  model$results$lambda <- rep(0, n_comp)
+  model$results$execution_time <- end.time - start.time
   
   # Add flags ----
   model$model_traits$is_functional   <- FALSE

@@ -8,8 +8,8 @@ TEST_SUITE <- "My brand new data decomposition method"
 test_suite <- "example_data_decomposition"
 
 ## Force fit/evaluation even if a fit is already available
-FORCE_FIT <- TRUE
-FORCE_EVALUATE <- TRUE
+FORCE_FIT <- FALSE
+FORCE_EVALUATE <- FALSE
 
 ## Execution flow modifiers
 RUN <- list()
@@ -20,3 +20,7 @@ RUN$qualitative_analysis <- TRUE
 
 ## C++ output
 IGNORE_CPP_OUTPUT = TRUE
+
+## Defaults
+name_main_test_default <- "test1"
+order <- NULL # Boxplot grouping | Rows | Cols 

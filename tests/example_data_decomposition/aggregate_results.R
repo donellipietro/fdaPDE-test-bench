@@ -1,7 +1,7 @@
 # = ========================================================================== =
-# - Test: Example data decomposition — RESULTS LOADER
+# - Test: Example data decomposition — Aggregate results
 # - Desc: Loads quantitative results for all options of a selected test and
-#         returns them as a structured list (no plotting, no fitting).
+#         returns them as a structured list, then aggregates the data in plots
 # - Args:
 #     [1] name_main_test : name of the main test to scan (e.g., "test1")
 # = ========================================================================== =
@@ -20,29 +20,29 @@ options(warn = -1)
 ## Load libraries ----
 invisible(suppressMessages(sapply(c(
   # discretization
-  "fdaPDE","femR",
+  "fdaPDE", "femR",
   # algebraic utils
   "pracma",
   # data manipulation
-  "MASS","tidyr","dplyr",
+  "MASS", "tidyr", "dplyr",
   # keep plotting deps (not used here) to avoid missing imports in utils
-  "ggplot2","viridis","stringr","RColorBrewer","grid","gridExtra",
+  "ggplot2", "viridis", "stringr", "RColorBrewer", "grid", "gridExtra",
   # json
   "jsonlite",
   # sampling
-  "sf","sp","raster"
+  "sf", "sp", "raster"
 ), require, character.only = TRUE)))
 
 ## Load functions ----
 source("src/utils/cat.R")
 source("src/utils/directories.R")
 source("src/utils/options.R")
-source("src/utils/load_results_utils.R")  # <- uses load_quantitative_results()
+source("src/utils/load_results_utils.R")
 source("src/utils/plotting_utils.R")
 
 ## Load configuration file
 path_this <- get_script_path()
-source(paste0(path_this, "config.R"))     # defines test_suite, TEST_SUITE, RUN, etc.
+source(paste0(path_this, "config.R"))
 
 ## Load test-specific helpers
 source(paste0("tests/", test_suite, "/utils/generate_options.R"))
@@ -64,7 +64,7 @@ if (length(args) == 0) {
 
 ## Prepare queue/log dirs for this test
 path_list$queue <- paste0(path_list$queue, name_main_test, "/")
-path_list$logs <- paste0(path_list$logs,  name_main_test, "/")
+path_list$logs <- paste0(path_list$logs, name_main_test, "/")
 mkdir(c(path_list$queue, path_list$logs))
 
 ## Generate all option files for this test
@@ -79,9 +79,10 @@ loaded_results <- load_all_quantitiative_results(path_list, name_main_test)
 
 # Plot aggregated results ----
 
-loaded_results$varying_options
-order <- 1:length(loaded_results$varying_options) # default
-# order <- c(1, 2, 3) # Boxplot grouping | Rows | Cols 
+# loaded_results$varying_options
+if (is.null(order) || length(order) != length(loaded_results$varying_options)) {
+  order <- 1:length(loaded_results$varying_options) # default
+}
 
 
 ### Time complexity ----
@@ -104,7 +105,7 @@ plots_catalog <- list(
 ## Open a pdf where to save the plots
 pdf(paste(path_list$images, name_main_test, "/time_complexity.pdf", sep = ""), width = 15, height = 15)
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names, 
+  loaded_results, data_plot, title_prefix, values_names,
   order = order, limits = limits, plots_catalog = plots_catalog
 )
 dev.off()
@@ -127,7 +128,7 @@ limits <- c(0, max(data_plot[loaded_results$model_names]))
 
 ## Plot aggregated results
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names, 
+  loaded_results, data_plot, title_prefix, values_names,
   order = order, limits = limits
 )
 
@@ -141,7 +142,7 @@ limits <- c(0, max(data_plot[loaded_results$model_names]))
 
 ## Plot aggregated results
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names, 
+  loaded_results, data_plot, title_prefix, values_names,
   order = order, limits = limits
 )
 
@@ -155,7 +156,7 @@ limits <- c(0, max(data_plot[loaded_results$model_names]))
 
 ## Plot aggregated results
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names, 
+  loaded_results, data_plot, title_prefix, values_names,
   order = order, limits = limits
 )
 
@@ -169,7 +170,7 @@ limits <- c(0, max(data_plot[loaded_results$model_names]))
 
 ## Plot aggregated results
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names, 
+  loaded_results, data_plot, title_prefix, values_names,
   order = order, limits = limits
 )
 
@@ -191,7 +192,7 @@ limits <- c(-12, 1)
 
 ## Plot aggregated results
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names, 
+  loaded_results, data_plot, title_prefix, values_names,
   order = order, limits = limits
 )
 

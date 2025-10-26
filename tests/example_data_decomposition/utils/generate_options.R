@@ -44,17 +44,17 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
         model_colors = model_colors,
         cpp_script = "fPCA-2D",
         test_options = list(
-          n_reps = 30,
-          varying_options = c("NSR", "n_nodes", "n_locs")
+          n_reps = 10,
+          varying_options = c("n_nodes", "n_stat_units", "NSR") # , "n_locs"
         ),
         domain_and_locations = list(
           name_mesh = "unit_square",
-          locs_eq_nodes = FALSE
+          locs_eq_nodes = TRUE
         ),
         dimensions = list(
-          n_nodes = c(25, 100, 400),       # vectors to be combined
-          n_locs = c(50, 100, 200, 400),   # vectors to be combined
-          n_stat_units = 100,
+          n_nodes = c(100, 200, 400),
+          n_locs = c(100, 200, 400),
+          n_stat_units = c(50, 100, 200),
           n_nodes_HR_grid = 1000
         ),
         model_options = list(
@@ -64,7 +64,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           mean = FALSE
         ),
         noise = list(
-          NSR = c(0, 0.05, 0.10, 0.20),    # vectors to be combined
+          NSR = seq(0, 0.5, length = 5),
           seed = seed
         ),
         regularization = list(
@@ -77,9 +77,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
         paste(
           name_main_test,
           ## Include all the varying options!
-          "nsr", sprintf("%.2f", comb_row$NSR),
+          "nsr", sprintf("%.3f", comb_row$NSR),
           "nn", sprintf("%04d", comb_row$n_nodes),
-          "nl", sprintf("%04d", comb_row$n_locs),
+          "nsu", sprintf("%04d", comb_row$n_stat_units),
+          # "nl", sprintf("%04d", comb_row$n_locs),
           sep = "_"
         )
       }
