@@ -19,8 +19,9 @@ $(TARGET): $(SRC)
 
 
 # Targets ----
-.PHONY: help install install_femR build complile \
-        clean_options clean_compliled clean  distclean \
+.PHONY: help install install_femR build  \
+        complile compile_all \
+        clean_options clean_compiled clean  distclean \
         run_test run_test_parallel
 
 
@@ -36,17 +37,30 @@ install_femR:
 # 	@echo "\nInstalling fdaPDE..."
 # 	@$(RSCRIPT) src/installation/install_fdaPDE.R
 install:  install_femR 
-	@echo "\nInstallation completed.\n"
+	@echo "\nInstallation completed."
 
 
 # Build target ----
-build:
-	@echo "\nCreating necessary directories..."
+build: install compile_all
+	@echo "Creating necessary directories..."
 	@mkdir -p results
 	@mkdir -p images
-	@echo "Build completed.\n"
+	@echo "\nBuild completed.\n"
 	
-## Compile C++ model
+## Compile C++ model ----
+
+# Discover models under cpp/, excluding 'include'
+MODELS := $(filter-out include,$(notdir $(wildcard cpp/*)))
+MODELS := $(filter-out $(filter-out %/,$(patsubst %/,%,$(foreach d,$(MODELS),$(if $(wildcard cpp/$(d)/.),$(d),)))), $(MODELS))
+
+## Compile all models under cpp/ (excluding 'include')
+compile_all:
+	@echo "\nCompiling all models in cpp/..."
+	@for model in $$(find cpp -mindepth 1 -maxdepth 1 -type d ! -name include -exec basename {} \; | sort); do \
+		$(MAKE) --no-print-directory compile MODEL=$$model || exit $$?; \
+	done
+	@echo "All models compiled successfully.\n"
+
 # Usage: make compile MODEL=my_model
 compile:
 	@if [ -z "$(MODEL)" ]; then \
@@ -57,7 +71,7 @@ compile:
 		echo "\nError: model directory cpp/$(MODEL) not found."; \
 		exit 1; \
 	fi
-	@echo "\n Compling cpp/$(MODEL)/main.cpp ..."
+	@echo "\nCompling cpp/$(MODEL)/main.cpp ..."
 	@$(MAKE) $(TARGET) MODEL=$(MODEL)
 
 
@@ -68,7 +82,7 @@ clean_tmp:
 	@$(RM) -r tmp/
 	
 ## Clean compiled binaries
-clean_compliled: 
+clean_compiled: 
 	@$(RM) cpp/*/fit_model
 
 ## Clean temporary files, logs and R session files
@@ -96,7 +110,7 @@ clean_test:
 	fi
 	
 ## DANGER ZONE: Full cleanup of all generated files
-distclean: clean clean_compliled
+distclean: clean clean_compiled
 	@echo "Attention! This will remove ALL the additional files and directories generated so far."
 	@read -p "Are you sure you want to continue? [y/n]: " confirm && [ "$$confirm" = "y" ] || (echo "Cleanup aborted." && false)
 	@echo "Removing additional generated files..."
