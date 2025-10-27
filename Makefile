@@ -2,13 +2,12 @@
 # Define commands ----
 RSCRIPT := Rscript
 
-
 # C++ compiler ----
 CC = /opt/homebrew/bin/gcc-15
 CXX = /opt/homebrew/bin/g++-15
 CXXFLAGS = -O3 -Wno-psabi -std=c++20 -march=native \
-  -I/Users/pietrodonelli/Documents/University/fdaPDE/fdaPDE-cpp \
-  -I/Users/pietrodonelli/Documents/University/fdaPDE/fdaPDE-cpp/fdaPDE/core \
+  -I/Users/marcogalliani/Projects/fdaPDE-cpp \
+  -I/Users/marcogalliani/Projects/fdaPDE-cpp/fdaPDE/core \
   -I/opt/homebrew/include/eigen3 \
 
 SRC = cpp/$(MODEL)/main.cpp

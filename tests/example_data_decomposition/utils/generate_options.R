@@ -20,10 +20,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   # - model_names: used for indexing (no spaces, please)
   # - model_labels: used for plotting
   model_names <- c(
-    "mv", "subspace", "sequential", "direct"
+    "mv","smv","subspace", "sequential", "direct"
   )
   model_labels <- c(
-    "mv", "subspace", "sequential", "direct"
+    "mv","smv","subspace", "sequential", "direct"
   )
   
   ## Define the color palette
@@ -44,27 +44,29 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
         model_colors = model_colors,
         cpp_script = "fPCA-2D",
         test_options = list(
-          n_reps = 30,
-          varying_options = c("NSR", "n_nodes", "n_locs")
+          n_reps = 10,
+          varying_options = c("NSR","n_nodes", "n_locs")
         ),
         domain_and_locations = list(
           name_mesh = "unit_square",
           locs_eq_nodes = FALSE
         ),
         dimensions = list(
-          n_nodes = c(25, 100, 400),       # vectors to be combined
-          n_locs = c(50, 100, 200, 400),   # vectors to be combined
+          n_nodes = c(1600),       # vectors to be combined
+          n_locs = c(900),   # vectors to be combined
           n_stat_units = 100,
           n_nodes_HR_grid = 1000
         ),
         model_options = list(
-          n_comp = 5
+          n_comp = 4
         ),
         data = list(
-          mean = FALSE
+          mean = FALSE,
+          var_pct = c(0.4,0.3,0.2,0.1) #pct of variance explained by each PC (w.r.t. to true data)
+
         ),
         noise = list(
-          NSR = c(0, 0.05, 0.10, 0.20),    # vectors to be combined
+          NSR = c(0.10, 0.20, 0.40, 0.80),    # vectors to be combined
           seed = seed
         ),
         regularization = list(

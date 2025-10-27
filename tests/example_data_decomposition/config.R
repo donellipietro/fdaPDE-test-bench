@@ -8,8 +8,8 @@ TEST_SUITE <- "My brand new data decomposition method"
 test_suite <- "example_data_decomposition"
 
 ## Force fit/evaluation even if a fit is already available
-FORCE_FIT <- TRUE
-FORCE_EVALUATE <- TRUE
+FORCE_FIT <- F
+FORCE_EVALUATE <- F
 
 ## Execution flow modifiers
 RUN <- list()
