@@ -53,7 +53,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
         ),
         dimensions = list(
           n_nodes = c(100, 200, 400),
-          n_locs = c(100, 200, 400),
+          # n_locs = c(100, 200, 400),
           n_stat_units = c(50, 100, 200),
           n_nodes_HR_grid = 1000
         ),

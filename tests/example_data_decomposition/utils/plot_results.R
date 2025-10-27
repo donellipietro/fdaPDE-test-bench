@@ -97,11 +97,6 @@ plot_qualitative_results <- function(quantitative_results, qualitative_results) 
   # quantitative_results <- loaded_qnt_results
   # qualitative_results  <- loaded_qlt_results
 
-  ## Get infos
-  domain <- qualitative_results$domain
-  n_comp <- ncol(loadings_true)
-  boundary <- domain$boundary
-
   ## Get fitted quantities
   scores <- qualitative_results$scores
   loadings <- qualitative_results$loadings
@@ -112,6 +107,11 @@ plot_qualitative_results <- function(quantitative_results, qualitative_results) 
   loadings_true <- qualitative_results$loadings_true
   loadings_true_locs <- qualitative_results$loadings_true_locs
   loadings_true_HR <- qualitative_results$loadings_true_HR
+  
+  ## Get infos
+  domain <- qualitative_results$domain
+  n_comp <- ncol(loadings_true)
+  boundary <- domain$boundary
 
   ## Models info
   model_names <- quantitative_results$model_names

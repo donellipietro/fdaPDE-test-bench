@@ -124,7 +124,6 @@ path_list <- update_paths(path_list, name_main_test, test_options)
 load(paste0(path_list$data, test_options$name_test, ".RData"))
 
 
-
 ## Create sub-directory ----
 path_list$images <- paste0(path_list$images, test_options$name_test, "/")
 mkdir(path_list$images)

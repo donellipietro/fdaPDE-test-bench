@@ -1,7 +1,5 @@
 # = ========================================================================== =
 # - Script: load_qualitative_results.R
-# - Author: Pietro Donelli
-# - Date: 2025-10-26
 # - Desc: Loads model outputs from all simulation batches for qualitative analysis.
 #         Reconstructs functional principal components (fPCs) at multiple spatial
 #         resolutions — nodes, observed locations, and a high-resolution grid —
