@@ -100,7 +100,6 @@ plots_catalog <- list(
   normalized = TRUE
 )
 
-
 ## Open a pdf where to save the plots
 pdf(paste(path_list$images, name_main_test, "/time_complexity.pdf", sep = ""), width = 15, height = 15)
 plot.aggregated_data(
@@ -176,6 +175,25 @@ plot.aggregated_data(
 ## Close pdf
 dev.off()
 
+### Angles ----
+
+## Open a pdf where to save the plots
+pdf(paste(path_list$images, name_main_test, "/angles.pdf", sep = ""), width = 15, height = 15)
+
+## Set plots parameters
+data_plot <- loaded_results$angles$components_m
+data_plot[loaded_results$model_names] <- log10(data_plot[loaded_results$model_names])
+title_prefix <- "Angles between true and estimated functions at locations"
+values_name <- "angle"
+limits <- c(0, 10)
+
+## Plot aggregated results
+plot.aggregated_data(
+  loaded_results, data_plot, title_prefix, values_names, 
+  order = order, limits = limits
+)
+## Close pdf
+dev.off()
 
 ### Regularization ----
 

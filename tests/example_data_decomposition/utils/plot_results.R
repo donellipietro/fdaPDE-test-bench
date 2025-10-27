@@ -56,5 +56,24 @@ plot_quantitative_analysis <- function(loaded_results){
       subgroup_colors = model_colors[indexes]
     ) + std_plot_settings() + ggtitle(title)
     print(plot)
+  }
+
+  ## Angles ----
+  angles <- loaded_results$angles
+  ## Component by component measures
+  names <- c("components_m")
+  titles <- c("Angle between true and estimated loading")
+  for (i in 1:length(names)) {
+    name <- names[i]
+    title <- titles[i]
+    indexes <- which(!is.nan(colSums(angles[[name]][, model_names])))
+    plot <- plot.grouped_boxplots(
+      angles[[name]][, c("Group", names(indexes))],
+      values_name = "Angle",
+      subgroup_name = "Approaches",
+      subgroup_labels = model_names[indexes],
+      subgroup_colors = model_colors[indexes]
+    ) + std_plot_settings() + ggtitle(title)
+    print(plot)
   } 
 }
