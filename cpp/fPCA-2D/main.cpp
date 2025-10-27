@@ -32,6 +32,16 @@ fpca_solver_variant get_fpca_solver(const std::string& solver_name) {
   else throw std::invalid_argument("Unknown solver: " + solver_name);
 }
 
+struct fPCA_fitted{
+    matrix_t S_, F_, Fn_;
+    vector_t lambda_;
+    // observers
+    const matrix_t& S() { return S_;}
+    const matrix_t& F() { return F_;}
+    const matrix_t& Fn() { return Fn_;}
+    const vector_t& lambda() { return lambda_;} 
+};
+
 // Example function
 auto fit_model(Triangulation<2,2> D,
                 const matrix_t& X,
@@ -57,18 +67,37 @@ auto fit_model(Triangulation<2,2> D,
   GeoFrame data(D);
   auto& l = data.insert_scalar_layer<POINT>("locs_layer", locs);
   l.load_blk("X", X.transpose());
-  
-  // Initialize the model
-  fPCA model("X", data, fe_ls_elliptic(a, F));
-  
-  // Select the fPCA solver according to solver_name
-  std::visit(
-    [&](auto&& solver){
-      model.fit(n_comp, lambda_grid, ComputeRandSVD | OptimizeGCV, solver);
-    },
-    get_fpca_solver(solver_name)
-  );
-  
+
+  fPCA_fitted model; 
+  if( solver_name == "smv"){
+    
+    // (1) pre-smoothing step
+    // modeling
+    FunctSmoother m("X", data, fe_ls_elliptic(a, F));
+    // fitting
+    m.fit(lambda_grid, OptimizeGCV);
+    model.lambda_ = m.lambda();
+    // (2) PCA
+    Eigen::JacobiSVD<matrix_t> svd;
+    svd.compute(m.smoothed_data_locs(), Eigen::ComputeThinU | Eigen::ComputeThinV);
+    model.S_ = svd.matrixU().leftCols(n_comp);
+    model.Fn_ = svd.matrixV().leftCols(n_comp)*svd.singularValues().head(n_comp).asDiagonal();
+    model.F_ = model.Fn_;
+  }else{
+    // Initialize the model
+    fPCA m("X", data, fe_ls_elliptic(a, F));
+    // Select the fPCA solver according to solver_name
+    std::visit(
+      [&](auto&& solver){
+        m.fit(n_comp, lambda_grid, ComputeRandSVD | OptimizeGCV, solver);
+      },
+      get_fpca_solver(solver_name)
+    );
+    model.S_ = m.S();
+    model.F_ = m.F();
+    model.Fn_ = m.Fn();
+    model.lambda_ = m.lambda();
+  }
   return model;
 }
 
