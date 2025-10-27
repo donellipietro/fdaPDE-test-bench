@@ -1,0 +1,21 @@
+{
+  "name": "R + C++ Dev Environment",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "REditorSupport.r",
+        "ms-vscode.cpptools",
+        "ms-python.python",
+        "GitHub.copilot"
+      ]
+    }
+  },
+  "postCreateCommand": "Rscript .devcontainer/install_packages.R",
+  "mounts": [
+    "source=/var/lib/docker/volumes,target=/mnt,type=volume"
+  ],
+  "remoteUser": "vscode"
+}
