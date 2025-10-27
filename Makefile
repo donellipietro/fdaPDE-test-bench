@@ -11,13 +11,6 @@ CXXFLAGS = -O3 -Wno-psabi -std=c++20 -march=native \
   -I/Users/pietrodonelli/Documents/University/fdaPDE/fdaPDE-cpp/fdaPDE/core \
   -I/opt/homebrew/include/eigen3 \
 
-SRC = cpp/$(MODEL)/main.cpp
-TARGET = cpp/$(MODEL)/fit_model
-
-$(TARGET): $(SRC)
-	$(CXX) -o $@ $^ $(CXXFLAGS)
-
-
 # Targets ----
 .PHONY: help install install_femR build  \
         complile compile_all \
@@ -53,7 +46,7 @@ build: install compile_all
 MODELS := $(filter-out include,$(notdir $(wildcard cpp/*)))
 MODELS := $(filter-out $(filter-out %/,$(patsubst %/,%,$(foreach d,$(MODELS),$(if $(wildcard cpp/$(d)/.),$(d),)))), $(MODELS))
 
-## Compile all models under cpp/ (excluding 'include')
+## Compile all models under cpp/
 compile_all:
 	@echo "\nCompiling all models in cpp/..."
 	@for model in $$(find cpp -mindepth 1 -maxdepth 1 -type d ! -name include -exec basename {} \; | sort); do \
@@ -61,19 +54,46 @@ compile_all:
 	done
 	@echo "All models compiled successfully.\n"
 
+## Compile all mains found in cpp/$(MODEL)
 # Usage: make compile MODEL=my_model
 compile:
 	@if [ -z "$(MODEL)" ]; then \
 		echo "\nUsage: make compile MODEL=<model_name>"; \
-		exit 1; \
-	fi
-	@if [ ! -d "cpp/$(MODEL)" ]; then \
+		echo ""; \
+		echo "Available MODELS:"; \
+		find cpp -mindepth 1 -maxdepth 1 -type d ! -name include -exec basename {} \; | \
+		while read m; do \
+			ls "cpp/$$m"/main*.cpp >/dev/null 2>&1 && echo $$m; \
+		done | sort | sed 's/^\(.*\)/- \1 (make compile MODEL=\1)/'; \
+		echo ""; \
+		exit 0; \
+	elif [ ! -d "cpp/$(MODEL)" ]; then \
 		echo "\nError: model directory cpp/$(MODEL) not found."; \
 		exit 1; \
+	else \
+		echo "\nCompiling mains in cpp/$(MODEL) ..."; \
+		mains=$$(ls cpp/$(MODEL)/main*.cpp 2>/dev/null || true); \
+		if [ -z "$$mains" ]; then \
+			echo "No main*.cpp found in cpp/$(MODEL)"; \
+			exit 1; \
+		fi; \
+		for src in $$mains; do \
+			base=$$(basename "$$src"); \
+			case "$$base" in \
+				main.cpp) bin="fit_model" ;; \
+				main_*.cpp) stem=$${base#main_}; stem=$${stem%.cpp}; bin="fit_model_$$stem" ;; \
+				*) continue ;; \
+			esac; \
+			out="cpp/$(MODEL)/$$bin"; \
+			if [ ! -f "$$out" ] || [ "$$src" -nt "$$out" ]; then \
+				echo "- $$src  ==>  $$out"; \
+				$(CXX) -o "$$out" "$$src" $(CXXFLAGS); \
+			else \
+				echo "- $$out is up to date"; \
+			fi; \
+		done; \
+		echo "All the source files have been compiled!\n"; \
 	fi
-	@echo "\nCompling cpp/$(MODEL)/main.cpp ..."
-	@$(MAKE) $(TARGET) MODEL=$(MODEL)
-
 
 # Clean targets ----
 
@@ -82,8 +102,8 @@ clean_tmp:
 	@$(RM) -r tmp/
 	
 ## Clean compiled binaries
-clean_compiled: 
-	@$(RM) cpp/*/fit_model
+clean_compiled:
+	@$(RM) cpp/*/fit_model cpp/*/fit_model_*
 
 ## Clean temporary files, logs and R session files
 clean: clean_tmp
