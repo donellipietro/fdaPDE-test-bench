@@ -34,10 +34,14 @@ fit_and_evaluate_models <- function(path_list,
     load(paste0(path_batch, "batch_", batch_index, "_results_evaluation.RData"))
   }
   
+  
   # Fit and Evaluate ----
-  for (model_name in test_options$model_names) {
-    ## File name where the results should be found
+  for (model_name in test_options$model_names) { # model_name <- test_options$model_names[1]
+    
+    ## Initialize empty model
     model <- NULL
+    
+    ## File name where the results should be found
     file_model <- paste(path_batch, "batch_", batch_index, "_fitted_model_", model_name, ".RData", sep = "")
     
     ## Fit the model only if necessary (no fit found or fit is forced)
@@ -51,6 +55,9 @@ fit_and_evaluate_models <- function(path_list,
       
       ## Fit the model
       model <- fit_model(model_name, domain, data, path_list, test_options)
+      
+      ## Adjust results
+      model <- adjust_results(model, data)
       
       ## Save fitted model
       assign(paste("model_", model_name, sep = ""), model)

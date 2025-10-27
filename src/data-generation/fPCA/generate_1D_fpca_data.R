@@ -23,7 +23,7 @@
 #   and observed quantities for testing.
 generate_1D_fpca_data <- function(domain, locations,
                                   test_options,
-                                  loadings_true_generator = NULL, 
+                                  loadings_true_generator = NULL,
                                   mean_generator = NULL,
                                   seed = 0) {
   ## Generators ----
@@ -33,19 +33,19 @@ generate_1D_fpca_data <- function(domain, locations,
   if (is.null(mean_generator)) {
     mean_generator <- log_mean_generator_1D
   }
-  
+
   ## Knots ----
   knots <- domain$knots
   n_knots <- length(knots)
-  
+
   ## Dimensions ----
   n_stat_units <- test_options$dimensions$n_stat_units
   n_comp <- test_options$dimensions$n_comp
   n_locs <- length(locs)
-  
+
   ## fPCs ----
   loadings_true <- matrix(0, nrow = n_knots, ncol = n_comp)
-  loadings_true_locs <- matrix(0, nrow = n_locs,  ncol = n_comp)
+  loadings_true_locs <- matrix(0, nrow = n_locs, ncol = n_comp)
   for (i in 1:n_comp) {
     ## Generate loading on nodes
     loadings_true[, i] <- loadings_true_generator(knots, i)
@@ -53,49 +53,48 @@ generate_1D_fpca_data <- function(domain, locations,
     norm <- norm_l2(loadings_true[, i])
     loadings_true[, i] <- loadings_true[, i] / norm
     ## Evaluate loading at locations and normalize consistently
-    loadings_true_locs[, i] <- loadings_true_generator(locs,  i)
+    loadings_true_locs[, i] <- loadings_true_generator(locs, i)
   }
-  
+
   ## Scores sampling ----
   ## Compute Scores Standard Deviations
   data_range <- max(loadings_true) - min(loadings_true)
-  sd_s  <- 1 / 1:n_comp
-  sd_s  <- sd_s / sum(sd_s)
+  sd_s <- 1 / 1:n_comp
+  sd_s <- sd_s / sum(sd_s)
   sigma_s <- sd_s * data_range
-  
+
   ## Set seed
   set.seed(seed)
-  
+
   ## Sample scores
-  scores_true <- MASS::mvrnorm(n = n_stat_units, mu=rep(0,n_comp), Sigma=diag(sigma_s^2), empirical = T)
-  
+  scores_true <- MASS::mvrnorm(n = n_stat_units, mu = rep(0, n_comp), Sigma = diag(sigma_s^2), empirical = T)
+
   ## Data ----
   X_c_true <- scores_true %*% t(loadings_true)
   X_c_true_locs <- scores_true %*% t(loadings_true_locs)
-  
+
   ## Mean ----
   ## Compute mean using the generator
   X_mean_true <- mean_generator(knots)
   X_mean_true_locs <- mean_generator(locs)
-  
+
   ## Add mean to the data
   X_true <- X_c_true + rep(1, n_stat_units) %*% t(X_mean_true)
   X_true_locs <- X_c_true_locs + rep(1, n_stat_units) %*% t(X_mean_true_locs)
-  
+
   ## Noise ----
   ## Compute noise sd from signal variance and NSR
   NSR <- test_options$noise$NSR
   sigma_noise_x <- sqrt(NSR * sum(sigma_s^2))
   NSR_X <- NSR
-  
   ## Compute noise matrix (zero-mean)
   EE <- rnorm(n = n_stat_units * n_locs, sd = sigma_noise_x)
   EE <- matrix(EE, nrow = n_stat_units)
   EE <- scale(EE, scale = FALSE) ## enforce zero-mean noise
-  
+
   ## Add noise to data observed at locations
   X_locs <- X_true_locs + EE
-  
+
   return(list(
     ## Dimensions
     dimensions = list(
@@ -104,24 +103,29 @@ generate_1D_fpca_data <- function(domain, locations,
       n_knots      = n_knots,
       n_locs       = n_locs
     ),
+    ## Domain and locations
+    domain = domain,
     locations = locs,
     ## Data
     X = X_locs,
     ## Expected results: reconstruction
-    X_mean_true      = X_mean_true,
+    X_mean_true = X_mean_true,
     X_mean_true_locs = X_mean_true_locs,
-    X_c_true         = X_c_true,
-    X_c_true_locs    = X_c_true_locs,
-    X_true           = X_true,
-    X_true_locs      = X_true_locs,
+    X_c_true = X_c_true,
+    X_c_true_locs = X_c_true_locs,
+    X_true = X_true,
+    X_true_locs = X_true_locs,
     ## Expected results: decomposition
-    loadings_true      = loadings_true,
+    loadings_true = loadings_true,
     loadings_true_locs = loadings_true_locs,
-    scores_true        = scores_true,
+    scores_true = scores_true,
     ## Computed quantities
-    sd_s          = sd_s,
-    sigma_s       = sigma_s,
+    sd_s = sd_s,
+    sigma_s = sigma_s,
     sigma_noise_x = sigma_noise_x,
-    NSR_X         = NSR_X
+    NSR_X = NSR_X
+    ## Generators
+    loadings_generator = loadings_generator,
+    mean_generator = mean_generator
   ))
 }

@@ -1,6 +1,6 @@
 # = ========================================================================== =
 # - Test: Example data decomposition
-# - Desc: Automates a full test cycle: picks an option, runs all methods, 
+# - Desc: Automates a full test cycle: picks an option, runs all methods,
 #         and saves results, logs, and plots for later analysis.
 # - Args (when calling it from terminal):
 #   [1] name_main_test : name of the main test to run (e.g., "test1")
@@ -9,7 +9,7 @@
 
 rm(list = ls())
 graphics.off()
-options(warn=-1)
+options(warn = -1)
 
 
 # README ----
@@ -31,7 +31,7 @@ options(warn=-1)
 
 invisible(suppressMessages(sapply(c(
   # discretization
-  "fdaPDE", "femR", 
+  "fdaPDE", "femR",
   # algebraic utils
   "pracma",
   # data manipulation
@@ -54,23 +54,22 @@ source("src/utils/options.R")
 source("src/utils/mesh_utils.R")
 source("src/utils/domain_utils.R")
 source("src/utils/plotting_utils.R")
-source("src/wrappers/fPCA.R")
 source("src/utils/error_metrics.R")
 source("src/utils/load_results_utils.R")
-# sapply(list.files("src/utils", pattern = "\\.R$", full.names = TRUE), source)
-
-## Data generation utilities
-source("src/data-generation/function_generators_2D.R")
-source("src/data-generation/fpca/generate_2D_fpca_data.R")
+sapply(list.files("src/data-generation", pattern = "\\.R$", full.names = TRUE), source)
 
 ## Load configuration file
 path_this <- get_script_path()
-source(paste0(path_this, "config.R")) # defines TEST_SUITE, test_suite, ... etc.
+source(paste0(path_this, "config.R"))
 
 ## Load test-specific functions
+source("src/wrappers/fPCA.R")
 source(paste0("tests/", test_suite, "/utils/fit_and_evaluate.R"))
+source(paste0("tests/", test_suite, "/utils/adjust_results.R"))
 source(paste0("tests/", test_suite, "/utils/models_evaluation.R"))
 source(paste0("tests/", test_suite, "/utils/plot_results.R"))
+source(paste0("tests/", test_suite, "/utils/load_qualitative_results.R"))
+
 
 ## Create suite directories ----
 
@@ -87,43 +86,44 @@ args <- commandArgs(trailingOnly = TRUE)
 
 ## Parse the arguments, if any
 if (length(args) == 0) {
-  
   ## Switch to interactive mode
   INTERACTIVE <- TRUE
-  
+
   ## Load the option-generation function
   source(paste("tests/", test_suite, "/utils/generate_options.R", sep = ""))
-  
+
   ## Select the test you're interested in
-  name_main_test <- "test1"
-  
+  name_main_test <- name_main_test_default
+
   ## Update directories according to the new test
   path_list$queue <- paste0(path_list$queue, name_main_test, "/")
   path_list$logs <- paste0(path_list$logs, name_main_test, "/")
   mkdir(c(path_list$queue, path_list$logs))
-  
+
   ## Generate all the options for that test
   generate_options(test_suite, name_main_test, path_list$queue)
-  
+
   ## Read all the available options
-  file_options_list <- sort(list.files(path_list$queue), decreasing = TRUE)
-  
-  ## Select the option you want to analyze
-  file_options <- file_options_list[1]
-  
+  file_options_list <- sort(list.files(path_list$queue), decreasing = FALSE)
+  file_options <- NULL
 } else {
-  
   ## Switch to non-interactive mode
   INTERACTIVE <- FALSE
-  
+
   ## Set the requested configuration
   name_main_test <- args[1]
   file_options <- args[2]
-  
+
   ## Update directories according to the new test
   path_list$queue <- paste0(path_list$queue, name_main_test, "/")
   path_list$logs <- paste0(path_list$logs, name_main_test, "/")
   mkdir(c(path_list$queue, path_list$logs))
+}
+
+## Select the test option
+if (is.null(file_options)) {
+  file_options_list
+  file_options <- file_options_list[1] ## <====== INPUT HERE
 }
 
 ## Load selected options
@@ -162,19 +162,23 @@ domain <- generate_domain(
 
 ## Sample the locations
 locations <- generate_locations(
-  domain, 
+  domain,
   test_options$domain_and_locations$locs_eq_nodes,
   test_options$dimensions$n_locs
 )
 
 ## Plot domain and locations
 plot.points(
-  locations = locations, 
+  locations = locations,
   boundary = domain$boundary,
   group_colors = "darkblue", size = 1
 ) + std_plot_settings_fields() + ggtitle("Domain and locations")
 
+
 ## Select generators ----
+
+## Data generation utilities
+source("src/data-generation/fpca/generate_2D_fpca_data.R")
 
 ## Select the desired generators
 generate_data <- generate_2D_fpca_data
@@ -182,9 +186,9 @@ generate_loadings_true <- function(locs, i) {
   translated_laplacian_eigenfunction(locs, i, x_t = 0.2, y_t = 0)
 }
 generate_mean_true <- function(locs) {
-  if(test_options$data$mean){
-    return(log_mean_generator(locs)) 
-  } else{
+  if (test_options$data$mean) {
+    return(log_mean_generator(locs))
+  } else {
     return(locs[, 1] * 0)
   }
 }
@@ -194,20 +198,19 @@ generate_mean_true <- function(locs) {
 
 ## Fit the models n_reps times
 if (RUN$tests) {
-  
   for (batch_idx in 1:test_options$test_options$n_reps) {
     cat(paste0("\nBatch ", batch_idx, ":\n"))
-    
+
     ## Create batch directory
     path_list$batch <- paste0(path_list$results, "batch_", batch_idx, "/")
     mkdir(path_list$batch)
-    
+
     ### Generate data ----
     cat("- Generate data\n")
-    
+
     ## File names where the results should be found
     file_model_vect <- paste0(path_list$batch, "batch_", batch_idx, "_fitted_model_", test_options$model_names, ".RData")
-    
+
     ## Generate data only if necessary (no fit found of fit is forced)
     if (any(!file.exists(file_model_vect)) || FORCE_FIT || FORCE_EVALUATE) {
       data <- generate_data(
@@ -220,10 +223,10 @@ if (RUN$tests) {
     } else {
       cat("Skipped, data are not necessary!\n")
     }
-    
+
     ## Fit and evaluation ----
     cat("- Fit models\n")
-    
+
     fit_and_evaluate_models(
       path_list = path_list,
       data = data,
@@ -231,40 +234,22 @@ if (RUN$tests) {
       batch_index = batch_idx,
       test_options = test_options
     )
-    
+
+    ## Save data for qualitative results analysis ----
+    if (batch_idx == 1) {
+      save(data, file = paste0(path_list$data, test_options$name_test, ".RData"))
+    }
   }
 } else {
   cat("Skipped, relying on the saved results!\n")
 }
 
-
-## Results analysis ----
-cat.section_title("Results analysis")
-
-### Quantitative analysis ----
-cat.subsection_title("Quantitative analysis")
-
-if (RUN$quantitative_analysis) {
-  ## Load data
-  loaded_results <- load_quantitative_results(test_options, path_list)
-  
-  ## Plot
-  pdf(file = paste(path_list$images, test_options$name_test, "_quantitative.pdf", sep = ""))
-    plot_quantitative_analysis(loaded_results)
-  dev.off()
-}
-
-## load qualitative:
-# - prende un vettore con i nomi dei risultati da caricare
-
-
 # Test finalization ----
 
-## Remove options file from the queue
+## Remove options file from the queue ----
 file.remove(paste0(path_list$queue, file_options))
 
 ## Close the log file
-if(!INTERACTIVE){
+if (!INTERACTIVE) {
   sink()
 }
-

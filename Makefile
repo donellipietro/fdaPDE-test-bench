@@ -10,18 +10,10 @@ CXXFLAGS = -O3 -Wno-psabi -std=c++20 -march=native \
   -I/Users/marcogalliani/Projects/fdaPDE-cpp/fdaPDE/core \
   -I/opt/homebrew/include/eigen3 \
 
-SRC = cpp/$(MODEL)/main.cpp
-TARGET = cpp/$(MODEL)/fit_model
-
-$(TARGET): $(SRC)
-	$(CXX) -o $@ $^ $(CXXFLAGS)
-
-
-# Targets ----
-.PHONY: help install install_femR build complile \
-        clean_options clean_compliled clean  distclean \
+.PHONY: help install install_femR build  \
+        complile compile_all \
+        clean_options clean_compiled clean  distclean \
         run_test run_test_parallel
-
 
 # Default target ----
 all: install build
@@ -35,30 +27,70 @@ install_femR:
 # 	@echo "\nInstalling fdaPDE..."
 # 	@$(RSCRIPT) src/installation/install_fdaPDE.R
 install:  install_femR 
-	@echo "\nInstallation completed.\n"
+	@echo "\nInstallation completed."
 
 
 # Build target ----
-build:
-	@echo "\nCreating necessary directories..."
+build: install compile_all
+	@echo "Creating necessary directories..."
 	@mkdir -p results
 	@mkdir -p images
-	@echo "Build completed.\n"
+	@echo "\nBuild completed.\n"
 	
-## Compile C++ model
+## Compile C++ model ----
+
+# Discover models under cpp/, excluding 'include'
+MODELS := $(filter-out include,$(notdir $(wildcard cpp/*)))
+MODELS := $(filter-out $(filter-out %/,$(patsubst %/,%,$(foreach d,$(MODELS),$(if $(wildcard cpp/$(d)/.),$(d),)))), $(MODELS))
+
+## Compile all models under cpp/
+compile_all:
+	@echo "\nCompiling all models in cpp/..."
+	@for model in $$(find cpp -mindepth 1 -maxdepth 1 -type d ! -name include -exec basename {} \; | sort); do \
+		$(MAKE) --no-print-directory compile MODEL=$$model || exit $$?; \
+	done
+	@echo "All models compiled successfully.\n"
+
+## Compile all mains found in cpp/$(MODEL)
 # Usage: make compile MODEL=my_model
 compile:
 	@if [ -z "$(MODEL)" ]; then \
 		echo "\nUsage: make compile MODEL=<model_name>"; \
-		exit 1; \
-	fi
-	@if [ ! -d "cpp/$(MODEL)" ]; then \
+		echo ""; \
+		echo "Available MODELS:"; \
+		find cpp -mindepth 1 -maxdepth 1 -type d ! -name include -exec basename {} \; | \
+		while read m; do \
+			ls "cpp/$$m"/main*.cpp >/dev/null 2>&1 && echo $$m; \
+		done | sort | sed 's/^\(.*\)/- \1 (make compile MODEL=\1)/'; \
+		echo ""; \
+		exit 0; \
+	elif [ ! -d "cpp/$(MODEL)" ]; then \
 		echo "\nError: model directory cpp/$(MODEL) not found."; \
 		exit 1; \
+	else \
+		echo "\nCompiling mains in cpp/$(MODEL) ..."; \
+		mains=$$(ls cpp/$(MODEL)/main*.cpp 2>/dev/null || true); \
+		if [ -z "$$mains" ]; then \
+			echo "No main*.cpp found in cpp/$(MODEL)"; \
+			exit 1; \
+		fi; \
+		for src in $$mains; do \
+			base=$$(basename "$$src"); \
+			case "$$base" in \
+				main.cpp) bin="fit_model" ;; \
+				main_*.cpp) stem=$${base#main_}; stem=$${stem%.cpp}; bin="fit_model_$$stem" ;; \
+				*) continue ;; \
+			esac; \
+			out="cpp/$(MODEL)/$$bin"; \
+			if [ ! -f "$$out" ] || [ "$$src" -nt "$$out" ]; then \
+				echo "- $$src  ==>  $$out"; \
+				$(CXX) -o "$$out" "$$src" $(CXXFLAGS); \
+			else \
+				echo "- $$out is up to date"; \
+			fi; \
+		done; \
+		echo "All the source files have been compiled!\n"; \
 	fi
-	@echo "\n Compling cpp/$(MODEL)/main.cpp ..."
-	@$(MAKE) $(TARGET) MODEL=$(MODEL)
-
 
 # Clean targets ----
 
@@ -67,8 +99,8 @@ clean_tmp:
 	@$(RM) -r tmp/
 	
 ## Clean compiled binaries
-clean_compliled: 
-	@$(RM) cpp/*/fit_model
+clean_compiled:
+	@$(RM) cpp/*/fit_model cpp/*/fit_model_*
 
 ## Clean temporary files, logs and R session files
 clean: clean_tmp
@@ -82,37 +114,42 @@ clean: clean_tmp
 # - usage: make clean_test TEST_SUITE=centering TEST_NAME=test1
 clean_test:
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
-		echo "\nUsage: make clean_test TEST_SUITE=<suite> TEST_NAME=<test_name>\n"; \
+		echo "Usage: make clean_test TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
+		echo ""; \
 		echo "Available TEST_SUITEs:"; \
-		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | sed 's/^/- /'; \
+		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
+		sed 's/^\(.*\)/- \1 (make clean_test TEST_SUITE=\1 TEST_NAME=<test_name>)/'; \
 		echo ""; \
 		exit 0; \
 	else \
-		echo "\nCleaning results and images for test: $(TEST_NAME) from suite: $(TEST_SUITE)"; \
+		echo "Cleaning results and images for test: $(TEST_NAME) from suite: $(TEST_SUITE)"; \
 		$(RM) -r results/$(TEST_SUITE)/$(TEST_NAME); \
 		$(RM) -r images/$(TEST_SUITE)/$(TEST_NAME); \
-		echo "Cleanup completed for test: $(TEST_NAME)\n"; \
+		$(RM) -r data/tests/$(TEST_SUITE)/$(TEST_NAME); \
+		echo "Cleanup completed for test: $(TEST_NAME)"; \
 	fi
 	
 ## DANGER ZONE: Full cleanup of all generated files
-distclean: clean clean_compliled
+distclean: clean clean_compiled
 	@echo "Attention! This will remove ALL the additional files and directories generated so far."
 	@read -p "Are you sure you want to continue? [y/n]: " confirm && [ "$$confirm" = "y" ] || (echo "Cleanup aborted." && false)
 	@echo "Removing additional generated files..."
 	@$(RM) -r images/
 	@$(RM) -r results/
+	@$(RM) -r data/tests/
 	@echo "Additional cleanup completed.\n"
 
 # Test targets ----
 
 ## Run all the batches of a test sequentially
-# usage: make run_test TEST_SUITE=centering TEST_NAME=test1
+# usage: make run_test TEST_SUITE=test-suite-name TEST_NAME=test-name
 run_test: build
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
 		echo "Usage: make run_test TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
 		echo ""; \
 		echo "Available TEST_SUITEs:"; \
-		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | sed 's/^/- /'; \
+		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
+		sed 's/^\(.*\)/- \1 (make run_test TEST_SUITE=\1 TEST_NAME=<test_name>)/'; \
 		echo ""; \
 		exit 0; \
 	else \
@@ -121,13 +158,14 @@ run_test: build
 	fi
 	
 ## Run all the batches of a test in parallel
-# usage: make run_test_parallel TEST_SUITE=centering TEST_NAME=test1
+# usage: make run_test_parallel TEST_SUITE=test-suite-name TEST_NAME=test-name
 run_test_parallel: build
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
 		echo "Usage: make run_test_parallel TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
 		echo ""; \
 		echo "Available TEST_SUITEs:"; \
-		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | sed 's/^/- /'; \
+		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
+		sed 's/^\(.*\)/- \1 (make run_test_parallel TEST_SUITE=\1 TEST_NAME=<test_name>)/'; \
 		echo ""; \
 		exit 0; \
 	else \

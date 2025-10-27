@@ -21,10 +21,9 @@
 #   noise, and returns a full set of true and observed quantities for testing.
 generate_2D_fpca_data <- function(domain, locations,
                                   test_options,
-                                  loadings_generator = NULL, 
+                                  loadings_generator = NULL,
                                   mean_generator = NULL,
                                   seed = 0) {
-  
   ## Generators ----
   if (is.null(loadings_generator)) {
     loadings_generator <- cube_eigenfunction
@@ -115,29 +114,34 @@ generate_2D_fpca_data <- function(domain, locations,
     ## Dimensions
     dimensions = list(
       n_stat_units = n_stat_units,
-      n_comp       = n_comp,
-      n_nodes      = n_nodes,
-      n_locs       = n_locs
+      n_comp = n_comp,
+      n_nodes = n_nodes,
+      n_locs = n_locs
     ),
+    ## Domain & locations
+    domain = domain,
     locations = locs,
     ## Data
     X = X_locs,
     ## Expected results: reconstruction
-    X_mean_true      = X_mean_true,
+    X_mean_true = X_mean_true,
     X_mean_true_locs = X_mean_true_locs,
-    X_c_true         = X_c_true,
-    X_c_true_locs    = X_c_true_locs,
-    X_true           = X_true,
-    X_true_locs      = X_true_locs,
+    X_c_true = X_c_true,
+    X_c_true_locs = X_c_true_locs,
+    X_true = X_true,
+    X_true_locs = X_true_locs,
     ## Expected results: decomposition
     loadings_norms     = loadings_norms,
-    loadings_true      = loadings_true,
+    loadings_true = loadings_true,
     loadings_true_locs = loadings_true_locs,
-    scores_true        = scores_true,
+    scores_true = scores_true,
     ## Computed quantities
-    sd_s          = sd_s,
-    sigma_s       = sigma_s,
+    sd_s = sd_s,
+    sigma_s = sigma_s,
     sigma_noise_x = sigma_noise_x,
-    NSR_X         = NSR_X
+    NSR_X = NSR_X,
+    ## Generators
+    loadings_generator = loadings_generator,
+    mean_generator = mean_generator
   ))
 }
