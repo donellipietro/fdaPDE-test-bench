@@ -46,7 +46,6 @@ source("src/utils/mesh_utils.R")
 source("src/utils/domain_utils.R")
 source("src/utils/error_metrics.R")
 source("src/utils/plotting_utils.R")
-source("src/utils/load_results_utils.R")
 sapply(list.files("src/data-generation", pattern = "\\.R$", full.names = TRUE), source)
 
 ## Load configuration file
@@ -55,6 +54,7 @@ source(paste0(path_this, "config.R"))
 
 ## Load test-specific functions
 source("src/wrappers/fPCA.R")
+source(paste0("tests/", test_suite, "/utils/load_results.R"))
 source(paste0("tests/", test_suite, "/utils/plot_results.R"))
 
 ## Create suite directories ----
@@ -133,19 +133,9 @@ cat.subsection_title("Quantitative analysis")
 loaded_qnt_results <- load_quantitative_results(test_options, path_list)
 
 ## Plot
+source(paste0("tests/", test_suite, "/utils/plot_results.R"))
 pdf(file = paste(path_list$images, test_options$name_test, "_quantitative.pdf", sep = ""))
 plot_quantitative_results(loaded_qnt_results)
-dev.off()
-
-## Quantitative analysis ----
-cat.subsection_title("Qualitative analysis")
-
-## Load data
-loaded_qlt_results <- load_qualitative_results(test_options, data, path_list)
-
-## Plot
-pdf(file = paste(path_list$images, test_options$name_test, "_qualitative.pdf", sep = ""))
-plot_qualitative_results(loaded_qnt_results, loaded_qlt_results)
 dev.off()
 
 ## Optionally open the results directory
