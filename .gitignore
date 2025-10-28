@@ -11,7 +11,8 @@ results/
 images/
 queue/
 data/*
-cpp/*/fit_model
+cpp/
+!cpp/*/*.cpp
 .idea/
 
 # exceptions
