@@ -25,10 +25,10 @@ RUN apt-get update && apt-get install -y libeigen3-dev
 
 # --- Clone the external C++ repo you need ---
 # Replace the URL below with your actual repository
-RUN git clone https://github.com/username/repo-with-cpp-scripts.git /opt/cpp_repo
+RUN git clone https://github.com/fdaPDE/fdaPDE-cpp.git /opt/fdaPDE-cpp
 
 # --- Install R packages (base packages for development) ---
-RUN R -e "install.packages(c('devtools', 'remotes', 'tidyverse', 'Rcpp', 'RcppEigen', 'data.table', 'ggplot2'), repos='https://cloud.r-project.org')"
+RUN R -e "install.packages(c('devtools','remotes', 'tidyverse', 'Rcpp', 'RcppEigen', 'data.table', 'ggplot2'), repos='https://cloud.r-project.org')"
 
 # Set working directory
 WORKDIR /workspaces/${localWorkspaceFolderBasename}
