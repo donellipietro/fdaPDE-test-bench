@@ -172,6 +172,41 @@ run_test_parallel: build
 		echo "Running: $(TEST_NAME) from suite $(TEST_SUITE)"; \
 		./run_tests_parallel.sh "$(TEST_SUITE)" "$(TEST_NAME)"; \
 	fi
+
+inspect_results:
+	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
+		echo "Usage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
+		echo ""; \
+		echo "Available TEST_SUITEs:"; \
+		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
+		sed 's/^\(.*\)/- \1 (make inspect_results TEST_SUITE=\1 TEST_NAME=<test_name>)/'; \
+		echo ""; \
+		exit 0; \
+	else \
+		queue_directory="tmp/queue/$(TEST_SUITE)/$(TEST_NAME)"; \
+		echo "Available files in $$queue_directory:"; \
+		files=($$(ls -1 $$queue_directory 2>/dev/null)); \
+		if [ $${#files[@]} -eq 0 ]; then \
+			echo "No files found in $$queue_directory."; \
+			exit 1; \
+		fi; \
+		count=$${#files[@]}; \
+		for i in $$(seq 1 $$count); do \
+			echo "  $$i) $${files[$$((i-1))]}"; \
+		done; \
+		read -p "Select a file number: " choice; \
+		if [ $$choice -ge 1 ] && [ $$choice -le $$count ]; then \
+			selected=$${files[$$((choice-1))]}; \
+			echo "Running RScript with selected file: $$selected"; \
+			Rscript "src/init.R" "$(TEST_SUITE)" "$(TEST_NAME)"; \
+			Rscript "tests/$(TEST_SUITE)/inspect_results.R" "$(TEST_NAME)" "$$selected"; \
+		else \
+			echo "Invalid choice!"; \
+			exit 1; \
+		fi; \
+	fi
+
+	
 	
 	
 ## Show available targets and descriptions
