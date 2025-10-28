@@ -20,10 +20,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   # - model_names: used for indexing (no spaces, please)
   # - model_labels: used for plotting
   model_names <- c(
-    "mv","smv","subspace", "sequential", "direct"
+    "mv", "smv", "subspace", "subspace_fpc_spec", "sequential", "direct"
   )
   model_labels <- c(
-    "mv","smv","subspace", "sequential", "direct"
+    "mv", "smv", "subspace", "sub_fspec", "sequential", "direct"
   )
   
   ## Define the color palette
@@ -66,7 +66,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
 
         ),
         noise = list(
-          NSR = c(0.10, 0.20, 0.50, 1.00),    # vectors to be combined
+          NSR = c(0.10, 0.2, 0.50, 1.00),    # vectors to be combined
           seed = seed
         ),
         regularization = list(
