@@ -18,6 +18,7 @@ fit_model <- function(model_name, domain, data, path_list, test_options) {
          mv = return(MVPCA(data, test_options)),
          smv = return(sMVPCA(model_name, domain, data, path_list, test_options)),
          subspace = return(fPCA(model_name, domain, data, path_list, test_options)),
+         subspace_fpc_spec = return(fPCA(model_name, domain, data, path_list, test_options)),
          sequential = return(fPCA(model_name, domain, data, path_list, test_options)),
          direct = return(fPCA(model_name, domain, data, path_list, test_options)),
          {

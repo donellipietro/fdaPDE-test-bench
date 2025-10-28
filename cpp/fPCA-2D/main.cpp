@@ -23,10 +23,12 @@ using vector_t = Eigen::Matrix<double, Eigen::Dynamic, 1>;
 using fpca_solver_variant = std::variant<
   fpca_power_solver,
   fpca_subspace_solver,
+  fpca_subspace_experimental_solver,
   fpca_direct_solver
 >;
 fpca_solver_variant get_fpca_solver(const std::string& solver_name) {
   if (solver_name == "subspace") return fpca_subspace_solver();
+  else if (solver_name == "subspace_fpc_spec") return fpca_subspace_experimental_solver();
   else if (solver_name == "sequential") return fpca_power_solver();
   else if (solver_name == "direct") return fpca_direct_solver();
   else throw std::invalid_argument("Unknown solver: " + solver_name);
@@ -64,7 +66,7 @@ auto fit_model(Triangulation<2,2> D,
   // Select the fPCA solver according to solver_name
   std::visit(
     [&](auto&& solver){
-      model.fit(n_comp, lambda_grid, ComputeRandSVD | OptimizeGCV, solver);
+      model.fit(n_comp, lambda_grid, ComputeRandSVD | OptimizeGCV | DoNotComputeMean, solver);
     },
     get_fpca_solver(solver_name)
   );
