@@ -149,6 +149,7 @@ fPCA <- function(model_name, domain, data, path_list, test_options) {
   model$results$X_hat <- as.matrix(read.csv(paste(path_tmp_results, "reconstruction.csv", sep = "")))
   model$results$X_hat_locs <- as.matrix(read.csv(paste(path_tmp_results, "reconstruction_at_locs.csv", sep = "")))
   model$results$lambda <- as.matrix(read.csv(paste(path_tmp_results, "lambda.csv", sep = "")))
+  model$results$gcv_scores <- as.matrix(read.csv(paste(path_tmp_results, "gcv_scores.csv", sep = "")))
   model$results$execution_time <- end.time - start.time
   
   # Add flags ----
