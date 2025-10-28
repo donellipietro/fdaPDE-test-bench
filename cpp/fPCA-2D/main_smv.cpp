@@ -13,13 +13,14 @@ using nlohmann::json;
 // Type aliases
 using matrix_t = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>;
 using vector_t = Eigen::Matrix<double, Eigen::Dynamic, 1>;
-
+using sparse_matrix_t = Eigen::SparseMatrix<double>;
 
 struct sMVPCA{
-    matrix_t S_, Fn_;
+    matrix_t S_, F_, Fn_;
     vector_t lambda_;
     // observers
     const matrix_t& S() { return S_;}
+    const matrix_t& F() { return F_;}
     const matrix_t& Fn() { return Fn_;}
     const vector_t& lambda() { return lambda_;} 
 };
@@ -54,12 +55,21 @@ auto fit_model(Triangulation<2,2> D,
     // fitting
     m.fit(lambda_grid, OptimizeGCV);
     model.lambda_ = m.lambda();
-    // (2) PCA
+    // (2) Generalized PCA
+    // -> Cholesky of mass matrix
+    Eigen::SimplicialLLT<sparse_matrix_t> llt(m.mass());
+    // -> SVD of smoothed data left-multiplied by the cholesky factor of the mass matrix
     Eigen::JacobiSVD<matrix_t> svd;
-    svd.compute(m.smoothed_data_locs(), Eigen::ComputeThinU | Eigen::ComputeThinV);
+    sparse_matrix_t cholesky_factor = llt.matrixL();
+    cholesky_factor = llt.permutationPinv() * cholesky_factor;
+    svd.compute(m.smoothed_data() * cholesky_factor, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+    int n_dof = m.smoothed_data().cols();
+    matrix_t Id = matrix_t::Identity(n_dof, n_dof);
     model.S_ = svd.matrixU().leftCols(n_comp);
-    model.Fn_ = svd.matrixV().leftCols(n_comp)*svd.singularValues().head(n_comp).asDiagonal();
-    
+    model.F_ = llt.permutationPinv()*llt.matrixL().solve(Id).transpose()*svd.matrixV().leftCols(n_comp)*svd.singularValues().head(n_comp).asDiagonal();
+    model.Fn_ = m.Psi() * model.F_;
+
     return model;
 }
 
@@ -134,6 +144,7 @@ int main(int argc, char* argv[]) {
     
     // Save results ----
     write_csv(path_results + "loadings_locs.csv", model.Fn());
+    write_csv(path_results + "loadings.csv", model.F());
     write_csv(path_results + "scores.csv", model.S());
     write_csv(path_results + "reconstruction_at_locs.csv", rec_X_locs);
     write_csv(path_results + "lambda.csv", model.lambda());
