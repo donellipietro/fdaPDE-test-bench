@@ -56,7 +56,7 @@ source("src/utils/domain_utils.R")
 source("src/utils/plotting_utils.R")
 source("src/utils/error_metrics.R")
 source("src/utils/load_results_utils.R")
-sapply(list.files("src/data-generation", pattern = "\\.R$", full.names = TRUE), source)
+suppressMessages(sapply(list.files("src/data-generation", pattern = "\\.R$", full.names = TRUE), source))
 
 ## Load configuration file
 path_this <- get_script_path()

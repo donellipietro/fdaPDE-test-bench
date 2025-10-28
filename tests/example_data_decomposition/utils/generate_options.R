@@ -30,7 +30,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   model_colors <- brewer.pal(length(model_labels), "Set1")
   
   ## Options that you want to be common across tests 
-  lambda_grid <- 10^seq(-12, 1, by = 1)
+  lambda_grid <- pracma::logspace(-6, 1, n = 15)
   seed <- 1412
   
   switch(
@@ -52,8 +52,8 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           locs_eq_nodes = FALSE
         ),
         dimensions = list(
-          n_nodes = c(1600),       # vectors to be combined
-          n_locs = c(900),   # vectors to be combined
+          n_nodes = c(900),       # vectors to be combined
+          n_locs = c(1600),   # vectors to be combined
           n_stat_units = 100,
           n_nodes_HR_grid = 1000
         ),
@@ -66,7 +66,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
 
         ),
         noise = list(
-          NSR = c(0.10, 0.20, 0.40, 0.80),    # vectors to be combined
+          NSR = c(0.10, 0.20, 0.50, 1.00),    # vectors to be combined
           seed = seed
         ),
         regularization = list(
