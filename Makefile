@@ -183,6 +183,7 @@ inspect_results:
 		echo ""; \
 		exit 0; \
 	else \
+		Rscript "src/init.R" "$(TEST_SUITE)" "$(TEST_NAME)"; \
 		queue_directory="tmp/queue/$(TEST_SUITE)/$(TEST_NAME)"; \
 		echo "Available files in $$queue_directory:"; \
 		files=($$(ls -1 $$queue_directory 2>/dev/null)); \
@@ -198,7 +199,6 @@ inspect_results:
 		if [ $$choice -ge 1 ] && [ $$choice -le $$count ]; then \
 			selected=$${files[$$((choice-1))]}; \
 			echo "Running RScript with selected file: $$selected"; \
-			Rscript "src/init.R" "$(TEST_SUITE)" "$(TEST_NAME)"; \
 			Rscript "tests/$(TEST_SUITE)/inspect_results.R" "$(TEST_NAME)" "$$selected"; \
 		else \
 			echo "Invalid choice!"; \

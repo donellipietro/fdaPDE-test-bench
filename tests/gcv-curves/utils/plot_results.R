@@ -123,10 +123,7 @@ plot_quantitative_results <- function(loaded_results) {
         legend.spacing.x = unit(0.8, "cm"),
         legend.position = "top"
       )
-  }
-
-  print(plot_list[[1]])
-  
+  }  
   # Combine plots
   final_plot <- Reduce(`+`, plot_list) +
   plot_layout(guides = "collect", nrow = 1) +

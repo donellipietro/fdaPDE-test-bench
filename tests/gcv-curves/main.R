@@ -67,7 +67,6 @@ source("src/wrappers/fPCA.R")
 source(paste0("tests/", test_suite, "/utils/fit_and_evaluate.R"))
 source(paste0("tests/", test_suite, "/utils/models_evaluation.R"))
 source(paste0("tests/", test_suite, "/utils/plot_results.R"))
-source(paste0("tests/", test_suite, "/utils/load_qualitative_results.R"))
 
 
 ## Create suite directories ----

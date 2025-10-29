@@ -20,10 +20,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   # - model_names: used for indexing (no spaces, please)
   # - model_labels: used for plotting
   model_names <- c(
-    "subspace", "sequential", "direct"
+    "sequential", "direct", "subspace", "subspace_fpc_spec"
   )
   model_labels <- c(
-    "subspace", "sequential", "direct"
+    "sequential", "direct", "subspace", "subspace_fpc_spec"
   )
   
   ## Define the color palette
