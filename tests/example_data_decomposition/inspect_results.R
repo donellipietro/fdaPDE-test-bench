@@ -49,7 +49,8 @@ source("src/utils/domain_utils.R")
 source("src/utils/error_metrics.R")
 source("src/utils/plotting_utils.R")
 source("src/utils/load_results_utils.R")
-sapply(list.files("src/data-generation", pattern = "\\.R$", full.names = TRUE), source)
+source("src/data-generation/function_generators_1D.R")
+source("src/data-generation/function_generators_2D.R")
 
 ## Load configuration file
 path_this <- get_script_path()
@@ -151,7 +152,5 @@ pdf(file = paste(path_list$images, test_options$name_test, "_qualitative.pdf", s
 plot_qualitative_results(loaded_qnt_results, loaded_qlt_results)
 dev.off()
 
-## Optionally open the results directory
-if (INTERACTIVE) {
-  open(path_list$images)
-}
+## Open the results directory
+open(path_list$images)

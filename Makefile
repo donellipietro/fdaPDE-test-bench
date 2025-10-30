@@ -15,7 +15,7 @@ CXXFLAGS = -O3 -Wno-psabi -std=c++20 -march=native \
 .PHONY: help install install_femR build  \
         complile compile_all \
         clean_options clean_compiled clean  distclean \
-        run_test run_test_parallel
+        run_test run_test_parallel inspect_results
 
 
 # Default target ----
@@ -176,9 +176,13 @@ run_test_parallel: build
 		./run_tests_parallel.sh "$(TEST_SUITE)" "$(TEST_NAME)"; \
 	fi
 
+## Inspect results of a specific test interactively
+# Usage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>
+# Lists available result files in tmp/queue/<suite>/<test>, lets you select one,
+# and runs the corresponding R scripts to visualize or analyze it.
 inspect_results:
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
-		echo "Usage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
+		echo "\nUsage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
 		echo ""; \
 		echo "Available TEST_SUITEs:"; \
 		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
@@ -187,6 +191,7 @@ inspect_results:
 		exit 0; \
 	else \
 		queue_directory="tmp/queue/$(TEST_SUITE)/$(TEST_NAME)"; \
+		RScript src/init.R $(TEST_SUITE) $(TEST_NAME) \
 		echo "Available files in $$queue_directory:"; \
 		files=($$(ls -1 $$queue_directory 2>/dev/null)); \
 		if [ $${#files[@]} -eq 0 ]; then \
@@ -197,6 +202,7 @@ inspect_results:
 		for i in $$(seq 1 $$count); do \
 			echo "  $$i) $${files[$$((i-1))]}"; \
 		done; \
+		echo ""; \
 		read -p "Select a file number: " choice; \
 		if [ $$choice -ge 1 ] && [ $$choice -le $$count ]; then \
 			selected=$${files[$$((choice-1))]}; \

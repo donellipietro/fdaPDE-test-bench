@@ -79,11 +79,15 @@ loaded_results <- load_all_quantitiative_results(path_list, name_main_test)
 
 # Plot aggregated results ----
 
+## Create the path for images
+path_list$images <- paste0(path_list$images, name_main_test, "/")
+mkdir(path_list$images)
+
+## Define an order for the varying options
 # loaded_results$varying_options
 if (is.null(order) || length(order) != length(loaded_results$varying_options)) {
   order <- 1:length(loaded_results$varying_options) # default
 }
-
 
 ### Time complexity ----
 
@@ -103,7 +107,7 @@ plots_catalog <- list(
 
 
 ## Open a pdf where to save the plots
-pdf(paste(path_list$images, name_main_test, "/time_complexity.pdf", sep = ""), width = 15, height = 15)
+pdf(paste0(path_list$images, "time_complexity.pdf"), width = 15, height = 15)
 plot.aggregated_data(
   loaded_results, data_plot, title_prefix, values_names,
   order = order, limits = limits, plots_catalog = plots_catalog
@@ -115,8 +119,7 @@ dev.off()
 ### RMSE ----
 
 ## Open a pdf where to save the plots
-pdf(paste(path_list$images, name_main_test, "/rmse.pdf", sep = ""), width = 15, height = 15)
-
+pdf(paste0(path_list$images, "rmse.pdf"), width = 15, height = 15)
 
 #### Reconstruction error at locations ----
 
@@ -181,7 +184,7 @@ dev.off()
 ### Regularization ----
 
 ## Open a pdf where to save the plots
-pdf(paste(path_list$images, name_main_test, "/regularization.pdf", sep = ""), width = 15, height = 15)
+pdf(paste0(path_list$images, "regularization.pdf"), width = 15, height = 15)
 
 ## Set plots parameters
 data_plot <- loaded_results$lambdas
@@ -198,3 +201,6 @@ plot.aggregated_data(
 
 ## Close pdf
 dev.off()
+
+## Open the results directory
+open(path_list$images)

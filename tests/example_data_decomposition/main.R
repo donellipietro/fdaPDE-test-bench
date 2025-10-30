@@ -56,7 +56,9 @@ source("src/utils/domain_utils.R")
 source("src/utils/plotting_utils.R")
 source("src/utils/error_metrics.R")
 source("src/utils/load_results_utils.R")
-sapply(list.files("src/data-generation", pattern = "\\.R$", full.names = TRUE), source)
+source("src/data-generation/function_generators_1D.R")
+source("src/data-generation/function_generators_2D.R")
+
 
 ## Load configuration file
 path_this <- get_script_path()
@@ -220,6 +222,10 @@ if (RUN$tests) {
         mean_generator = generate_mean_true,
         seed = 4 * batch_idx + test_options$noise$seed
       )
+      ## Save data for qualitative results analysis
+      if (batch_idx == 1) {
+        save(data, file = paste0(path_list$data, test_options$name_test, ".RData"))
+      }
     } else {
       cat("Skipped, data are not necessary!\n")
     }
@@ -234,11 +240,7 @@ if (RUN$tests) {
       batch_index = batch_idx,
       test_options = test_options
     )
-
-    ## Save data for qualitative results analysis ----
-    if (batch_idx == 1) {
-      save(data, file = paste0(path_list$data, test_options$name_test, ".RData"))
-    }
+    
   }
 } else {
   cat("Skipped, relying on the saved results!\n")
