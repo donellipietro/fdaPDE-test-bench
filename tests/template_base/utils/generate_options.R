@@ -18,15 +18,11 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   ## Names of the models you want to compare
   # - model_names: used for indexing (no spaces, please)
   # - model_labels: used for plotting
-  model_names <- c(
-    ## ....
-  )
-  model_labels <- c(
-    ## ....
-  )
+  model_names <- c("model_a")
+  model_labels <- c("Model A")
 
   ## Define the color palette
-  model_colors <- brewer.pal(length(model_labels), "Set1")
+  model_colors <- brewer.pal(max(3, length(model_labels)), "Set1")[seq_along(model_labels)]
 
   ## Options that you want to be common across tests
   lambda_grid <- 10^seq(-12, 1, by = 1)
@@ -40,7 +36,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
         model_colors = model_colors,
         cpp_script = "fPCA-2D",
         test_options = list(
-          n_reps = 10,
+          n_reps = 1,
           varying_options = c("n_nodes", "n_stat_units", "NSR")
         ),
         domain_and_locations = list(
@@ -48,9 +44,8 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           locs_eq_nodes = TRUE
         ),
         dimensions = list(
-          n_nodes = c(100, 200, 400),
-          # n_locs = c(100, 200, 400),
-          n_stat_units = c(50, 100, 200),
+          n_nodes = 100,
+          n_stat_units = 50,
           n_nodes_HR_grid = 1000
         ),
         model_options = list(
@@ -60,7 +55,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           ## ....
         ),
         noise = list(
-          NSR = seq(0, 0.5, length = 5),
+          NSR = 0
         ),
         regularization = list(
           lambda_grid = lambda_grid
