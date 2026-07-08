@@ -5,16 +5,20 @@
 *.pdf
 *.Rproj
 *.csv
+.env
 
-# directories to ignore
-results/
-images/
-queue/
-data/*
-cpp/*/fit_model*
-.idea/
+# generated outputs and root links
+/results
+/images
+/queue
+/data/*
+/build
+/tmp
+/cpp/ipopt.opt
+/cpp/*/fit_model*
+/.idea/
 
 # exceptions
-!data/mesh/
-!data/mesh/**
+!/data/mesh/
+!/data/mesh/**
 .Rproj.user

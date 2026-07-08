@@ -1,118 +1,191 @@
 
 # Define commands ----
-RSCRIPT := Rscript
+SHELL := /bin/bash
+RSCRIPT ?= Rscript
+
+ACTIVE_ENV_PROFILE := $(strip $(shell if [ -f .env ]; then set -a; . ./.env >/dev/null 2>&1; printf '%s' "$$TESTBENCH_PROFILE"; fi))
+REQUESTED_PROFILE := $(strip $(PROFILE))
+TESTBENCH_PROFILE ?= $(if $(ACTIVE_ENV_PROFILE),$(ACTIVE_ENV_PROFILE),macbook)
+ifneq ($(REQUESTED_PROFILE),)
+override TESTBENCH_PROFILE := $(REQUESTED_PROFILE)
+endif
+SLURM_ARRAY_LIMIT ?=
+SLURM_COMPILE ?= 0
+SLURM_AGGREGATE ?= 1
+SLURM_DRY_RUN ?= 0
+SMOKE_TEST ?= 0
+SLURM_CPUS ?=
+SLURM_MEM ?=
+SLURM_TIME ?=
+SLURM_MULTI_CPUS ?=
+SLURM_MULTI_MEM ?=
+SLURM_MULTI_TIME ?=
+SLURM_PARTITION ?=
+SLURM_ACCOUNT ?=
+SLURM_QOS ?=
+SLURM_AGG_CPUS ?=
+SLURM_AGG_MEM ?=
+SLURM_AGG_TIME ?=
+SLURM_COMPILE_CPUS ?=
+SLURM_COMPILE_MEM ?=
+SLURM_COMPILE_TIME ?=
+SLURM_COMPILE_JOBS ?=
+SLURM_COMPILE_MODEL ?=
+SLURM_COMPILE_TARGET ?=
+COMPILE_JOBS ?=
+COMPILE_TARGET ?= $(if $(TARGET),$(TARGET),$(if $(EXEC),$(EXEC),$(SOURCE)))
+
+define config_value
+$(strip $(shell $(RSCRIPT) -e 'source("config.R"); profile <- "$(TESTBENCH_PROFILE)"; if (!profile %in% available_profiles()) quit(status = 0); cfg <- get_config(profile); value <- cfg[["$(1)"]]; if (is.null(value)) value <- ""; cat(value)'))
+endef
 
 
-# C++ compiler ----
-CC = /opt/homebrew/bin/gcc-15
-CXX = /opt/homebrew/bin/g++-15
-CXXFLAGS = -O3 -Wno-psabi -std=c++20 -march=native \
-  -I/Users/pietrodonelli/Documents/University/fdaPDE/fdaPDE-cpp \
-  -I/Users/pietrodonelli/Documents/University/fdaPDE/fdaPDE-cpp/fdaPDE/core \
-  -I/opt/homebrew/include/eigen3 \
+# Repository paths ----
+PATH_REPO := $(call config_value,PATH_REPO)
+PATH_CPP := $(call config_value,PATH_CPP)
+PATH_RESULTS := $(call config_value,PATH_RESULTS)
+PATH_IMAGES := $(call config_value,PATH_IMAGES)
+PATH_TEST_DATA := $(call config_value,PATH_TEST_DATA)
+PATH_TMP := $(call config_value,PATH_TMP)
+PATH_QUEUE := $(call config_value,PATH_QUEUE)
+PATH_LOGS := $(call config_value,PATH_LOGS)
+PATH_TMP_DATA := $(call config_value,PATH_TMP_DATA)
+PATH_TMP_RESULTS := $(call config_value,PATH_TMP_RESULTS)
+PATH_BUILD := $(call config_value,PATH_BUILD)
+TEST_EXECUTION_STRATEGY := $(call config_value,TEST_EXECUTION_STRATEGY)
+COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
 
 
 # Targets ----
-.PHONY: help install install_femR build  \
-        complile compile_all \
-        clean_options clean_compiled clean  distclean \
-        run_test run_test_parallel inspect_results
+.PHONY: help config write_env require_build_profile install install_femR build create_dirs \
+        ensure_env \
+        compile compile_all \
+        clean_tmp clean_compiled clean_links clean clean_test distclean \
+        run_test inspect_results
 
 
-# Default target ----
-all: install build
+## Build the repository with the active profile
+all: build
+
+
+# Config targets ----
+## Print the selected configuration profile
+config:
+	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --print
+
+## Write the active profile to .env
+write_env:
+	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --write-env
+
+require_build_profile:
+	@if [ -z "$(REQUESTED_PROFILE)" ]; then \
+		echo "Error: make build requires an explicit PROFILE."; \
+		echo ""; \
+		echo "Usage:"; \
+		echo "  make build PROFILE=<profile>"; \
+		echo ""; \
+		echo "Available profiles:"; \
+		$(RSCRIPT) -e 'source("config.R"); cat(paste0("  - ", available_profiles(), collapse = "\n"), "\n", sep = "")'; \
+		exit 1; \
+	fi
+
+ensure_env:
+	@if [ ! -f .env ]; then \
+		echo "Error: .env not found. Run: make build PROFILE=<profile>"; \
+		exit 1; \
+	fi
 
 
 # Installation targets ----
-install_femR:
-	@echo "\nInstalling femR..."
-	@$(RSCRIPT) src/installation/install_femR.R
+## Install femR into the active R library
+install_femR: write_env create_dirs
+	@printf '\nInstalling femR...\n'
+	@set -a; source .env; set +a; $(RSCRIPT) src/installation/install_femR.R
 # install_fdaPDE:
-# 	@echo "\nInstalling fdaPDE..."
+# 	@printf '\nInstalling fdaPDE...\n'
 # 	@$(RSCRIPT) src/installation/install_fdaPDE.R
-install:  install_femR 
-	@echo "\nInstallation completed."
+## Install repository R dependencies
+install: install_femR
+	@printf '\nInstallation completed.\n'
 
 
 # Build target ----
-build: install compile_all
+## Create generated directories and root shortcuts
+create_dirs:
 	@echo "Creating necessary directories..."
-	@mkdir -p results
-	@mkdir -p images
-	@echo "\nBuild completed.\n"
-	
-## Compile C++ model ----
+	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --create-dirs
 
-# Discover models under cpp/, excluding 'include'
-MODELS := $(filter-out include,$(notdir $(wildcard cpp/*)))
-MODELS := $(filter-out $(filter-out %/,$(patsubst %/,%,$(foreach d,$(MODELS),$(if $(wildcard cpp/$(d)/.),$(d),)))), $(MODELS))
+## Write .env, create directories, and install dependencies
+build: require_build_profile write_env create_dirs install
+	@printf '\nBuild completed.\n\n'
+
+# Compile targets ----
 
 ## Compile all models under cpp/
-compile_all:
-	@echo "\nCompiling all models in cpp/..."
-	@for model in $$(find cpp -mindepth 1 -maxdepth 1 -type d ! -name include -exec basename {} \; | sort); do \
-		$(MAKE) --no-print-directory compile MODEL=$$model || exit $$?; \
-	done
-	@echo "All models compiled successfully.\n"
-
-## Compile all mains found in cpp/$(MODEL)
-# Usage: make compile MODEL=my_model
-compile:
-	@if [ -z "$(MODEL)" ]; then \
-		echo "\nUsage: make compile MODEL=<model_name>"; \
-		echo ""; \
-		echo "Available MODELS:"; \
-		find cpp -mindepth 1 -maxdepth 1 -type d ! -name include -exec basename {} \; | \
-		while read m; do \
-			ls "cpp/$$m"/main*.cpp >/dev/null 2>&1 && echo $$m; \
-		done | sort | sed 's/^\(.*\)/- \1 (make compile MODEL=\1)/'; \
-		echo ""; \
-		exit 0; \
-	elif [ ! -d "cpp/$(MODEL)" ]; then \
-		echo "\nError: model directory cpp/$(MODEL) not found."; \
-		exit 1; \
+compile_all: ensure_env
+	@if [ "$(COMPILE_STRATEGY)" = "slurm" ]; then \
+		SLURM_COMPILE_CPUS="$(SLURM_COMPILE_CPUS)" \
+		SLURM_COMPILE_MEM="$(SLURM_COMPILE_MEM)" \
+		SLURM_COMPILE_TIME="$(SLURM_COMPILE_TIME)" \
+		SLURM_COMPILE_JOBS="$(SLURM_COMPILE_JOBS)" \
+		SLURM_DRY_RUN="$(SLURM_DRY_RUN)" \
+		SLURM_PARTITION="$(SLURM_PARTITION)" \
+		SLURM_ACCOUNT="$(SLURM_ACCOUNT)" \
+		SLURM_QOS="$(SLURM_QOS)" \
+		./cpp/compile_slurm.sh --all; \
 	else \
-		echo "\nCompiling mains in cpp/$(MODEL) ..."; \
-		mains=$$(ls cpp/$(MODEL)/main*.cpp 2>/dev/null || true); \
-		if [ -z "$$mains" ]; then \
-			echo "No main*.cpp found in cpp/$(MODEL)"; \
-			exit 1; \
+		COMPILE_JOBS="$(COMPILE_JOBS)" ./cpp/compile.sh --all; \
+	fi
+
+## Compile all mains found in cpp/$(MODEL), or one executable with TARGET
+# Usage: make compile MODEL=my_model [TARGET=fit_model]
+compile: ensure_env
+	@set -euo pipefail; \
+	if [ -z "$(MODEL)" ]; then \
+		./cpp/compile.sh --make-help; \
+	else \
+		args=("$(MODEL)"); \
+		if [ -n "$(COMPILE_TARGET)" ]; then \
+			args+=("$(COMPILE_TARGET)"); \
 		fi; \
-		for src in $$mains; do \
-			base=$$(basename "$$src"); \
-			case "$$base" in \
-				main.cpp) bin="fit_model" ;; \
-				main_*.cpp) stem=$${base#main_}; stem=$${stem%.cpp}; bin="fit_model_$$stem" ;; \
-				*) continue ;; \
-			esac; \
-			out="cpp/$(MODEL)/$$bin"; \
-			if [ ! -f "$$out" ] || [ "$$src" -nt "$$out" ]; then \
-				echo "- $$src  ==>  $$out"; \
-				$(CXX) -o "$$out" "$$src" $(CXXFLAGS); \
-			else \
-				echo "- $$out is up to date"; \
-			fi; \
-		done; \
-		echo "All the source files have been compiled!\n"; \
+		if [ "$(COMPILE_STRATEGY)" = "slurm" ]; then \
+			SLURM_COMPILE_CPUS="$(SLURM_COMPILE_CPUS)" \
+			SLURM_COMPILE_MEM="$(SLURM_COMPILE_MEM)" \
+			SLURM_COMPILE_TIME="$(SLURM_COMPILE_TIME)" \
+			SLURM_COMPILE_JOBS="$(SLURM_COMPILE_JOBS)" \
+			SLURM_DRY_RUN="$(SLURM_DRY_RUN)" \
+			SLURM_PARTITION="$(SLURM_PARTITION)" \
+			SLURM_ACCOUNT="$(SLURM_ACCOUNT)" \
+			SLURM_QOS="$(SLURM_QOS)" \
+			./cpp/compile_slurm.sh "$${args[@]}"; \
+		else \
+			COMPILE_JOBS="$(COMPILE_JOBS)" ./cpp/compile.sh "$${args[@]}"; \
+		fi; \
 	fi
 
 # Clean targets ----
 
 ## Clean temporary files
 clean_tmp:
-	@$(RM) -r tmp/
+	@$(RM) -r "$(PATH_TMP)"
+	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --create-dirs
 	
 ## Clean compiled binaries
 clean_compiled:
-	@$(RM) cpp/*/fit_model cpp/*/fit_model_*
+	@$(RM) -r "$(PATH_BUILD)"
+	@find "$(PATH_CPP)" -mindepth 2 -maxdepth 2 -type f \( -name 'fit_model' -o -name 'fit_model_*' \) -exec $(RM) {} +
+
+## Clean root links to generated folders
+clean_links:
+	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --remove-links
 
 ## Clean temporary files, logs and R session files
 clean: clean_tmp
-	@echo "\nCleaning temporary files..."
+	@printf '\nCleaning temporary files...\n'
 	@$(RM) *.aux *.log *.pdf *.txt *.json
 	@$(RM) .Rhistory
 	@$(RM) .RData
-	@echo "Cleanup completed.\n"
+	@printf 'Cleanup completed.\n\n'
 	
 ## Clean results and images of a specific test
 # - usage: make clean_test TEST_SUITE=centering TEST_NAME=test1
@@ -127,9 +200,9 @@ clean_test:
 		exit 0; \
 	else \
 		echo "Cleaning results and images for test: $(TEST_NAME) from suite: $(TEST_SUITE)"; \
-		$(RM) -r results/$(TEST_SUITE)/$(TEST_NAME); \
-		$(RM) -r images/$(TEST_SUITE)/$(TEST_NAME); \
-		$(RM) -r data/tests/$(TEST_SUITE)/$(TEST_NAME); \
+		$(RM) -r "$(PATH_RESULTS)/$(TEST_SUITE)/$(TEST_NAME)"; \
+		$(RM) -r "$(PATH_IMAGES)/$(TEST_SUITE)/$(TEST_NAME)"; \
+		$(RM) -r "$(PATH_TEST_DATA)/$(TEST_SUITE)/$(TEST_NAME)"; \
 		echo "Cleanup completed for test: $(TEST_NAME)"; \
 	fi
 	
@@ -137,17 +210,19 @@ clean_test:
 distclean: clean clean_compiled
 	@echo "Attention! This will remove ALL the additional files and directories generated so far."
 	@read -p "Are you sure you want to continue? [y/n]: " confirm && [ "$$confirm" = "y" ] || (echo "Cleanup aborted." && false)
+	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --remove-links
 	@echo "Removing additional generated files..."
-	@$(RM) -r images/
-	@$(RM) -r results/
-	@$(RM) -r data/tests/
-	@echo "Additional cleanup completed.\n"
+	@$(RM) -r "$(PATH_IMAGES)"
+	@$(RM) -r "$(PATH_RESULTS)"
+	@$(RM) -r "$(PATH_TEST_DATA)"
+	@$(RM) .env
+	@printf 'Additional cleanup completed.\n\n'
 
 # Test targets ----
 
-## Run all the batches of a test sequentially
+## Run all the batches of a test with the active profile strategy
 # usage: make run_test TEST_SUITE=centering TEST_NAME=test1
-run_test: build
+run_test: ensure_env
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
 		echo "Usage: make run_test TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
 		echo ""; \
@@ -157,33 +232,46 @@ run_test: build
 		echo ""; \
 		exit 0; \
 	else \
-		echo "Running: $(TEST_NAME) from suite $(TEST_SUITE)"; \
-		./run_tests.sh "$(TEST_SUITE)" "$(TEST_NAME)"; \
+		case "$(TEST_EXECUTION_STRATEGY)" in \
+			serial) runner=./tests/run_tests.sh ;; \
+			parallel) runner=./tests/run_tests_parallel.sh ;; \
+			slurm) runner=./tests/run_tests_slurm.sh ;; \
+			*) echo "Unknown TEST_EXECUTION_STRATEGY: $(TEST_EXECUTION_STRATEGY). Use serial, parallel, or slurm."; exit 1 ;; \
+		esac; \
+		echo "Running: $(TEST_NAME) from suite $(TEST_SUITE) using $(TEST_EXECUTION_STRATEGY)"; \
+		SLURM_ARRAY_LIMIT="$(SLURM_ARRAY_LIMIT)" \
+		SLURM_COMPILE="$(SLURM_COMPILE)" \
+		SLURM_AGGREGATE="$(SLURM_AGGREGATE)" \
+		SLURM_DRY_RUN="$(SLURM_DRY_RUN)" \
+		SLURM_CPUS="$(SLURM_CPUS)" \
+		SLURM_MEM="$(SLURM_MEM)" \
+		SLURM_TIME="$(SLURM_TIME)" \
+		SLURM_MULTI_CPUS="$(SLURM_MULTI_CPUS)" \
+		SLURM_MULTI_MEM="$(SLURM_MULTI_MEM)" \
+		SLURM_MULTI_TIME="$(SLURM_MULTI_TIME)" \
+		SLURM_PARTITION="$(SLURM_PARTITION)" \
+		SLURM_ACCOUNT="$(SLURM_ACCOUNT)" \
+		SLURM_QOS="$(SLURM_QOS)" \
+		SLURM_AGG_CPUS="$(SLURM_AGG_CPUS)" \
+		SLURM_AGG_MEM="$(SLURM_AGG_MEM)" \
+		SLURM_AGG_TIME="$(SLURM_AGG_TIME)" \
+		SLURM_COMPILE_CPUS="$(SLURM_COMPILE_CPUS)" \
+		SLURM_COMPILE_MEM="$(SLURM_COMPILE_MEM)" \
+		SLURM_COMPILE_TIME="$(SLURM_COMPILE_TIME)" \
+		SLURM_COMPILE_JOBS="$(SLURM_COMPILE_JOBS)" \
+		SLURM_COMPILE_MODEL="$(SLURM_COMPILE_MODEL)" \
+		SLURM_COMPILE_TARGET="$(SLURM_COMPILE_TARGET)" \
+		SMOKE_TEST="$(SMOKE_TEST)" \
+		"$$runner" "$(TEST_SUITE)" "$(TEST_NAME)"; \
 	fi
 	
-## Run all the batches of a test in parallel
-# usage: make run_test_parallel TEST_SUITE=centering TEST_NAME=test1
-run_test_parallel: build
-	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
-		echo "Usage: make run_test_parallel TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
-		echo ""; \
-		echo "Available TEST_SUITEs:"; \
-		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
-		sed 's/^\(.*\)/- \1 (make run_test_parallel TEST_SUITE=\1 TEST_NAME=<test_name>)/'; \
-		echo ""; \
-		exit 0; \
-	else \
-		echo "Running: $(TEST_NAME) from suite $(TEST_SUITE)"; \
-		./run_tests_parallel.sh "$(TEST_SUITE)" "$(TEST_NAME)"; \
-	fi
-
 ## Inspect results of a specific test interactively
 # Usage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>
 # Lists available result files in tmp/queue/<suite>/<test>, lets you select one,
 # and runs the corresponding R scripts to visualize or analyze it.
-inspect_results:
+inspect_results: ensure_env
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
-		echo "\nUsage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
+		printf '\nUsage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>\n'; \
 		echo ""; \
 		echo "Available TEST_SUITEs:"; \
 		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
@@ -191,10 +279,12 @@ inspect_results:
 		echo ""; \
 		exit 0; \
 	else \
-		queue_directory="tmp/queue/$(TEST_SUITE)/$(TEST_NAME)"; \
-		RScript src/init.R $(TEST_SUITE) $(TEST_NAME) \
+		set -e; \
+		set -a; source .env; set +a; \
+		queue_directory="$${PATH_QUEUE}/$(TEST_SUITE)/$(TEST_NAME)"; \
+		SMOKE_TEST="$(SMOKE_TEST)" $(RSCRIPT) src/init.R "$(TEST_SUITE)" "$(TEST_NAME)"; \
 		echo "Available files in $$queue_directory:"; \
-		files=($$(ls -1 $$queue_directory 2>/dev/null)); \
+		files=($$(ls -1 "$$queue_directory" 2>/dev/null)); \
 		if [ $${#files[@]} -eq 0 ]; then \
 			echo "No files found in $$queue_directory."; \
 			exit 1; \
@@ -208,8 +298,7 @@ inspect_results:
 		if [ $$choice -ge 1 ] && [ $$choice -le $$count ]; then \
 			selected=$${files[$$((choice-1))]}; \
 			echo "Running RScript with selected file: $$selected"; \
-			Rscript "src/init.R" "$(TEST_SUITE)" "$(TEST_NAME)"; \
-			Rscript "tests/$(TEST_SUITE)/inspect_results.R" "$(TEST_NAME)" "$$selected"; \
+			$(RSCRIPT) "tests/$(TEST_SUITE)/inspect_results.R" "$(TEST_NAME)" "$$selected"; \
 		else \
 			echo "Invalid choice!"; \
 			exit 1; \
@@ -217,13 +306,11 @@ inspect_results:
 	fi
 
 	
-	
-	
-## Show available targets and descriptions
+	## Show available targets and descriptions
 # Pretty printing for help (tweak width/color as you like)
 HELP_FMT ?= \033[36m- %-24s\033[0m %s\n
 help:
-	@echo "\nAvailable targets:"
+	@printf '\nAvailable targets:\n'
 	@awk -v fmt="$(HELP_FMT)" '\
 /^[a-zA-Z0-9_.-]+:.*##/ { \
   line=$$0; \
