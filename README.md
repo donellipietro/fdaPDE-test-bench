@@ -23,6 +23,22 @@ To run tests using the provided utilities, follow these steps:
    make build PROFILE=macbook
    ```
 
+   Local C++ suites also need a compiled model. Set `PATH_FDAPDE_CPP` to a
+   checkout containing `fdaPDE/models.h`; on macOS, Homebrew GCC, Eigen, and
+   Ipopt worked for the bundled example:
+
+   ```bash
+   PATH_FDAPDE_CPP=/path/to/fdaPDE-cpp \
+   PATH_EIGEN_INCLUDE=/opt/homebrew/opt/eigen/include/eigen3 \
+   CXX=/opt/homebrew/bin/g++-15 \
+   make build PROFILE=macbook
+
+   PATH_IPOPT_INCLUDE=/opt/homebrew/opt/ipopt/include/coin-or \
+   PATH_IPOPT_LIB=/opt/homebrew/opt/ipopt/lib \
+   LDLIBS=-lipopt \
+   make compile MODEL=fPCA-2D
+   ```
+
 3. Run a suite through the strategy declared by the active profile:
 
    ```bash
