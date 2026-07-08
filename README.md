@@ -32,6 +32,12 @@ To run tests using the provided utilities, follow these steps:
 Profiles can set `TEST_EXECUTION_STRATEGY` to `serial`, `parallel`, or `slurm`,
 and `COMPILE_STRATEGY` to `local` or `slurm`.
 
+For a small queue/batch check, pass `SMOKE_TEST=1`:
+
+```bash
+SMOKE_TEST=1 make run_test TEST_SUITE=example_data_decomposition TEST_NAME=test1
+```
+
 ### Makefile
 
 The `Makefile` provided in this repository includes several targets to automate common tasks related to installation, testing, building, and cleaning up the project environment. Below is a brief description of each target:
@@ -42,11 +48,10 @@ The `Makefile` provided in this repository includes several targets to automate 
 - `compile`: Compiles one model using the profile compile strategy.
 - `compile_all`: Compiles every model using the profile compile strategy.
 - `run_test`: Runs one test using the profile execution strategy.
+- `SMOKE_TEST=1 make run_test ...`: Runs the suite's reduced smoke grid.
 - `clean_tmp`: Cleans temporary queue/log files.
 - `clean`: Removes temporary files, logs, and R session files.
 - `distclean`: Combines the `clean` target with further cleanup actions, including the removal of additional generated files like images and results. It prompts for confirmation before executing to avoid accidental deletion.
-
-These targets can be executed using the make command followed by the target name, for example, to run all tests:
 
 Refer to the [`Makefile`](./Makefile) for implementation details and additional customization options.
 
@@ -58,23 +63,25 @@ Refer to the [`Makefile`](./Makefile) for implementation details and additional 
 ├── Makefile
 ├── README.md
 ├── config.R
+├── cpp
 ├── data
 │   └── mesh
 │       ├── ...
 ├── src
 │   ├── installation
-│   │   ├── install_fdaPDE2.R
+│   │   ├── install_fdaPDE.R
 │   │   └── install_femR.R
 │   └── utils
 │       ├── cat.R
+│       ├── config.R
 │       ├── directories.R
-│       ├── meshes.R
-│       ├── domain_and_locations.R
-│       ├── errors.R
-│       ├── results_management.R
-│       ├── plots.R
-│       └── wrappers.R
-├── analysis
+│       ├── domain_utils.R
+│       ├── error_metrics.R
+│       ├── load_results_utils.R
+│       ├── mesh_utils.R
+│       ├── options.R
+│       ├── plotting_utils.R
+│       └── test_groups.R
 └── tests
 ```
 
@@ -84,6 +91,7 @@ Refer to the [`Makefile`](./Makefile) for implementation details and additional 
 - **Makefile**: Makefile for automating build tasks or running commands.
 - **README.md**: This documentation file providing an overview of the repository and its usage instructions.
 - **config.R**: Runtime profiles and execution strategy defaults.
+- **cpp/**: C++ model drivers plus local, Singularity, and Slurm compile helpers.
 
 **Directories**:
 

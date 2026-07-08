@@ -26,6 +26,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
 
   ## Options that you want to be common across tests
   lambda_grid <- 10^seq(-12, 1, by = 1)
+  n_reps <- 1
 
   switch(name_main_test,
     test1 = {
@@ -36,7 +37,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
         model_colors = model_colors,
         cpp_script = "fPCA-2D",
         test_options = list(
-          n_reps = 1,
+          n_reps = n_reps,
           varying_options = c("n_nodes", "n_stat_units", "NSR")
         ),
         domain_and_locations = list(

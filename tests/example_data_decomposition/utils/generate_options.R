@@ -31,6 +31,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   ## Options that you want to be common across tests
   lambda_grid <- 10^seq(-12, 1, by = 1)
   seed <- 1412
+  n_reps <- if (exists("SMOKE_TEST") && isTRUE(SMOKE_TEST)) 1 else 10
+  n_nodes <- if (exists("SMOKE_TEST") && isTRUE(SMOKE_TEST)) 100 else c(100, 200, 400)
+  n_stat_units <- if (exists("SMOKE_TEST") && isTRUE(SMOKE_TEST)) 50 else c(50, 100, 200)
+  NSR <- if (exists("SMOKE_TEST") && isTRUE(SMOKE_TEST)) 0 else seq(0, 0.5, length = 5)
 
   switch(name_main_test,
     test1 = {
@@ -41,7 +45,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
         model_colors = model_colors,
         cpp_script = "fPCA-2D",
         test_options = list(
-          n_reps = 10,
+          n_reps = n_reps,
           varying_options = c("n_nodes", "n_stat_units", "NSR") # , "n_locs"
         ),
         domain_and_locations = list(
@@ -49,9 +53,9 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           locs_eq_nodes = TRUE
         ),
         dimensions = list(
-          n_nodes = c(100, 200, 400),
+          n_nodes = n_nodes,
           # n_locs = c(100, 200, 400),
-          n_stat_units = c(50, 100, 200),
+          n_stat_units = n_stat_units,
           n_nodes_HR_grid = 1000
         ),
         model_options = list(
@@ -62,7 +66,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           var_pct = c(0.4, 0.3, 0.2, 0.1)
         ),
         noise = list(
-          NSR = seq(0, 0.5, length = 5),
+          NSR = NSR,
           seed = seed
         ),
         regularization = list(
