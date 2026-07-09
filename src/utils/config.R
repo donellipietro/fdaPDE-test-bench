@@ -115,7 +115,7 @@ add_derived_paths <- function(cfg) {
   cfg$PATH_IMAGES <- config_value(cfg, "PATH_IMAGES", file.path(cfg$PATH_REPO, "images"))
   cfg$PATH_TEST_DATA <- config_value(cfg, "PATH_TEST_DATA", file.path(cfg$PATH_REPO, "data/tests"))
   cfg$PATH_QUEUE <- config_value(cfg, "PATH_QUEUE", file.path(cfg$PATH_TMP, "queue"))
-  cfg$PATH_LOGS <- config_value(cfg, "PATH_LOGS", file.path(cfg$PATH_TMP, "logs"))
+  cfg$PATH_LOGS <- config_value(cfg, "PATH_LOGS", file.path(cfg$PATH_REPO, "logs"))
   cfg$PATH_TMP_DATA <- config_value(cfg, "PATH_TMP_DATA", file.path(cfg$PATH_TMP, "data"))
   cfg$PATH_TMP_RESULTS <- config_value(cfg, "PATH_TMP_RESULTS", file.path(cfg$PATH_TMP, "results"))
   cfg$PATH_BUILD <- config_value(cfg, "PATH_BUILD", file.path(cfg$PATH_REPO, "build"))

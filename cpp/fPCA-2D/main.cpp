@@ -98,9 +98,16 @@ int main(int argc, char* argv[]) {
   std::filesystem::remove(params_path);
   
   // Extract paths
-  std::string path_mesh = "../../" + jroot["path_list"].value("mesh",    "./mesh/");
-  std::string path_data = "../../" + jroot["path_list"].value("data",    "./data/");
-  std::string path_results = "../../" + jroot["path_list"].value("results", "./results/");
+  auto path_from_json = [](const json& path_list, const char* key, const char* fallback) {
+    std::filesystem::path path(path_list.value(key, fallback));
+    if (path.is_relative()) path = std::filesystem::path("../..") / path;
+    std::string value = path.lexically_normal().string();
+    if (!value.empty() && value.back() != '/') value += "/";
+    return value;
+  };
+  std::string path_mesh = path_from_json(jroot["path_list"], "mesh", "./mesh/");
+  std::string path_data = path_from_json(jroot["path_list"], "data", "./data/");
+  std::string path_results = path_from_json(jroot["path_list"], "results", "./results/");
   
   std::cout << std::endl;
   std::cout << "Paths:" << std::endl;

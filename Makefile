@@ -57,37 +57,39 @@ COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
 
 
 # Targets ----
-.PHONY: help config write_env require_build_profile install install_femR build create_dirs \
+.PHONY: help config write_env install install_femR build create_dirs \
         ensure_env \
         compile compile_all \
         clean_tmp clean_compiled clean_links clean clean_test distclean \
         run_test inspect_results
 
 
-## Build the repository with the active profile
 all: build
 
 
 # Config targets ----
 ## Print the selected configuration profile
 config:
-	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --print
-
-## Write the active profile to .env
-write_env:
-	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --write-env
-
-require_build_profile:
 	@if [ -z "$(REQUESTED_PROFILE)" ]; then \
-		echo "Error: make build requires an explicit PROFILE."; \
+		echo ""; \
+		echo "make config requires an explicit PROFILE."; \
 		echo ""; \
 		echo "Usage:"; \
-		echo "  make build PROFILE=<profile>"; \
+		echo "  make config PROFILE=<profile>"; \
 		echo ""; \
 		echo "Available profiles:"; \
 		$(RSCRIPT) -e 'source("config.R"); cat(paste0("  - ", available_profiles(), collapse = "\n"), "\n", sep = "")'; \
-		exit 1; \
+		echo ""; \
+	else \
+		echo ""; \
+		echo "Configuration profile: $(TESTBENCH_PROFILE)"; \
+		echo ""; \
+		$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --print; \
+		echo ""; \
 	fi
+
+write_env:
+	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --write-env
 
 ensure_env:
 	@if [ ! -f .env ]; then \
@@ -97,27 +99,37 @@ ensure_env:
 
 
 # Installation targets ----
-## Install femR into the active R library
 install_femR: write_env create_dirs
 	@printf '\nInstalling femR...\n'
 	@set -a; source .env; set +a; $(RSCRIPT) src/installation/install_femR.R
 # install_fdaPDE:
 # 	@printf '\nInstalling fdaPDE...\n'
 # 	@$(RSCRIPT) src/installation/install_fdaPDE.R
-## Install repository R dependencies
 install: install_femR
 	@printf '\nInstallation completed.\n'
 
 
 # Build target ----
-## Create generated directories and root shortcuts
 create_dirs:
 	@echo "Creating necessary directories..."
 	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --create-dirs
 
 ## Write .env, create directories, and install dependencies
-build: require_build_profile write_env create_dirs install
-	@printf '\nBuild completed.\n\n'
+build:
+	@if [ -z "$(REQUESTED_PROFILE)" ]; then \
+		echo ""; \
+		echo "make build requires an explicit PROFILE."; \
+		echo ""; \
+		echo "Usage:"; \
+		echo "  make build PROFILE=<profile>"; \
+		echo ""; \
+		echo "Available profiles:"; \
+		$(RSCRIPT) -e 'source("config.R"); cat(paste0("  - ", available_profiles(), collapse = "\n"), "\n", sep = "")'; \
+		echo ""; \
+	else \
+		$(MAKE) --no-print-directory config install PROFILE="$(TESTBENCH_PROFILE)" && \
+		printf 'Profile %s build completed.\n\n' "$(TESTBENCH_PROFILE)"; \
+	fi
 
 # Compile targets ----
 
@@ -142,7 +154,9 @@ compile_all: ensure_env
 compile: ensure_env
 	@set -euo pipefail; \
 	if [ -z "$(MODEL)" ]; then \
+		printf '\n'; \
 		./cpp/compile.sh --make-help; \
+		printf '\n'; \
 	else \
 		args=("$(MODEL)"); \
 		if [ -n "$(COMPILE_TARGET)" ]; then \
@@ -165,23 +179,21 @@ compile: ensure_env
 
 # Clean targets ----
 
-## Clean temporary files
 clean_tmp:
 	@$(RM) -r "$(PATH_TMP)"
 	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --create-dirs
 	
-## Clean compiled binaries
 clean_compiled:
 	@$(RM) -r "$(PATH_BUILD)"
 	@find "$(PATH_CPP)" -mindepth 2 -maxdepth 2 -type f \( -name 'fit_model' -o -name 'fit_model_*' \) -exec $(RM) {} +
 
-## Clean root links to generated folders
 clean_links:
 	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --remove-links
 
 ## Clean temporary files, logs and R session files
 clean: clean_tmp
 	@printf '\nCleaning temporary files...\n'
+	@$(RM) -r "$(PATH_LOGS)"
 	@$(RM) *.aux *.log *.pdf *.txt *.json
 	@$(RM) .Rhistory
 	@$(RM) .RData
@@ -191,6 +203,7 @@ clean: clean_tmp
 # - usage: make clean_test TEST_SUITE=centering TEST_NAME=test1
 clean_test:
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
+		echo ""; \
 		echo "Usage: make clean_test TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
 		echo ""; \
 		echo "Available TEST_SUITEs:"; \
@@ -224,6 +237,7 @@ distclean: clean clean_compiled
 # usage: make run_test TEST_SUITE=centering TEST_NAME=test1
 run_test: ensure_env
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
+		echo ""; \
 		echo "Usage: make run_test TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
 		echo ""; \
 		echo "Available TEST_SUITEs:"; \
@@ -305,8 +319,7 @@ inspect_results: ensure_env
 		fi; \
 	fi
 
-	
-	## Show available targets and descriptions
+# Show available targets and descriptions
 # Pretty printing for help (tweak width/color as you like)
 HELP_FMT ?= \033[36m- %-24s\033[0m %s\n
 help:

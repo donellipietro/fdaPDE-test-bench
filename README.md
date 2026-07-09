@@ -28,7 +28,7 @@ To run tests using the provided utilities, follow these steps:
    Ipopt worked for the bundled example:
 
    ```bash
-   PATH_FDAPDE_CPP=/path/to/fdaPDE-cpp \
+   PATH_FDAPDE_CPP=/path/to/fdaPDE-cpp \ 
    PATH_EIGEN_INCLUDE=/opt/homebrew/opt/eigen/include/eigen3 \
    CXX=/opt/homebrew/bin/g++-15 \
    make build PROFILE=macbook

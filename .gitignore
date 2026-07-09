@@ -10,6 +10,7 @@
 # generated outputs and root links
 /results
 /images
+/logs
 /queue
 /data/*
 /build

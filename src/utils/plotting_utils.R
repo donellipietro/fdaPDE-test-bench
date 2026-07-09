@@ -598,13 +598,18 @@ plot.multiple_lines <- function(data,
     mutate(SubGroup = factor(SubGroup, levels = subgroup_levels, labels = subgroup_labels))
   
   ## Build plot
+  has_lines <- all(tapply(data$x, data$SubGroup, function(x) length(unique(x)) > 1))
   plot <- ggplot(data, aes(x = x, y = Score, color = SubGroup)) +
-    geom_line(linewidth = 1) +
     labs(x = x_name, y = values_name) +
     scale_color_manual(name = subgroup_name, values = subgroup_colors)
+  if (has_lines) {
+    plot <- plot + geom_line(linewidth = 1)
+  } else {
+    plot <- plot + geom_point(size = 2)
+  }
   
   ## Logarithmic reference lines for normalized log-log plots
-  if (LOGLOG && NORMALIZED) {
+  if (LOGLOG && NORMALIZED && length(unique(data$x)) > 1) {
     x <- seq(min(data$x), max(data$x), length = 10)
     plot <- plot +
       geom_line(data = data.frame(x = x, y = x / x[1]), aes(x = x, y = y),
