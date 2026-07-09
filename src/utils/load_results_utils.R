@@ -22,6 +22,66 @@ format_time <- function(t) {
 }
 
 
+## Function: parse_peak_rss_mb
+# - Args:
+#   * lines: output produced by /usr/bin/time
+#   * sysname: OS name, defaults to the current system
+# - Desc:
+#   Extracts peak resident memory and normalizes it to MB.
+parse_peak_rss_mb <- function(lines, sysname = Sys.info()[["sysname"]]) {
+  line <- grep("maximum resident set size|Maximum resident set size", lines, value = TRUE)
+  if (length(line) == 0) return(NaN)
+
+  value <- suppressWarnings(as.numeric(regmatches(line[1], regexpr("[0-9]+(\\.[0-9]+)?", line[1]))))
+  if (is.na(value)) return(NaN)
+
+  if (identical(sysname, "Darwin")) value / 1024^2 else value / 1024
+}
+
+
+## Function: r_peak_memory_mb
+# - Desc:
+#   Reads base R's peak heap usage after gc(reset = TRUE).
+r_peak_memory_mb <- function() {
+  stats <- gc()
+  mb_col <- match("max used", colnames(stats)) + 1
+  sum(stats[, mb_col], na.rm = TRUE)
+}
+
+
+## Function: system_with_memory
+# - Args:
+#   * command: shell command to execute
+#   * ignore.stdout: passed through to system2
+# - Desc:
+#   Runs an external command and returns elapsed time plus peak RSS in MB.
+system_with_memory <- function(command, ignore.stdout = FALSE) {
+  start.time <- Sys.time()
+
+  time_bin <- "/usr/bin/time"
+  if (!file.exists(time_bin)) {
+    system(command, ignore.stdout = ignore.stdout)
+    return(list(execution_time = Sys.time() - start.time, memory_usage = NaN))
+  }
+
+  time_file <- tempfile()
+  on.exit(unlink(time_file), add = TRUE)
+
+  time_arg <- if (identical(Sys.info()[["sysname"]], "Darwin")) "-l" else "-v"
+  system2(
+    time_bin,
+    c(time_arg, "-o", time_file, "sh", "-c", command),
+    stdout = if (ignore.stdout) FALSE else "",
+    stderr = ""
+  )
+
+  list(
+    execution_time = Sys.time() - start.time,
+    memory_usage = parse_peak_rss_mb(readLines(time_file, warn = FALSE))
+  )
+}
+
+
 ## Function: add_results
 # - Args:
 #   * data: a data.frame where rows are groups and columns are models

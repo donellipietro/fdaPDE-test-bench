@@ -37,6 +37,24 @@ plot_quantitative_results <- function(loaded_results) {
   ) + std_plot_settings() + ggtitle("Time")
   print(plot)
 
+  ## Memory ----
+  if (!is.null(loaded_results$memory_usage)) {
+    memory <- loaded_results$memory_usage
+    indexes <- which(!is.nan(colSums(memory[, model_names])))
+    if (length(indexes) > 0) {
+      plot <- plot.grouped_boxplots(
+        memory[, c("Group", names(indexes))],
+        values_name = "Peak RSS [MB]",
+        group_name = "",
+        group_labels = "",
+        subgroup_name = "Approaches",
+        subgroup_labels = model_labels[indexes],
+        subgroup_colors = model_colors[indexes]
+      ) + std_plot_settings() + ggtitle("Memory")
+      print(plot)
+    }
+  }
+
   ## RMSE ----
   ## Overall measures
   rmses <- loaded_results$rmse

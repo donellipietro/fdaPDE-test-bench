@@ -25,6 +25,7 @@ evaluate_results <- function(model, data) {
   
   ## Execution time ----
   execution_time <- model$results$execution_time
+  memory_usage <- model$results$memory_usage
   
   ## Lambdas ----
   lambdas <- as.vector(model$results$lambda)
@@ -107,6 +108,7 @@ evaluate_results <- function(model, data) {
   
   return(list(
     execution_time = execution_time,
+    memory_usage = memory_usage,
     lambdas = lambdas,
     rmse = rmse,
     irmse = irmse,

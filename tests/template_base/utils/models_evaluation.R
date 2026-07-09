@@ -15,13 +15,14 @@ evaluate_results <- function(model, data) {
   ## Room for results ----
   rmse <- list()
   irmse <- list()
-  lambda <- NULL
+  lambdas <- NULL
   
   ## Execution time ----
   execution_time <- model$results$execution_time
+  memory_usage <- model$results$memory_usage
   
   ## Lambdas ----
-  lambda <- model$results$lambda
+  lambdas <- model$results$lambda
   
   ## RMSE at locations ----
   
@@ -44,6 +45,7 @@ evaluate_results <- function(model, data) {
   
   return(list(
     execution_time = execution_time,
+    memory_usage = memory_usage,
     lambdas = lambdas,
     rmse = rmse,
     irmse = irmse

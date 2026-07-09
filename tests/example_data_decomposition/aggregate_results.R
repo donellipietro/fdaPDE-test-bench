@@ -95,7 +95,7 @@ if (is.null(order) || length(order) != length(loaded_results$varying_options)) {
 data_plot <- loaded_results$execution_time
 title_prefix <- "Execution times w.r.t the"
 values_name <- "Time [seconds]"
-limits <- c(0, max(data_plot[loaded_results$model_names]))
+limits <- c(0, max(unlist(data_plot[loaded_results$model_names]), na.rm = TRUE))
 
 plots_catalog <- list(
   boxplots = TRUE,
@@ -109,10 +109,31 @@ plots_catalog <- list(
 ## Open a pdf where to save the plots
 pdf(paste0(path_list$images, "time_complexity.pdf"), width = 15, height = 15)
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names,
+  loaded_results, data_plot, title_prefix, values_name,
   order = order, limits = limits, plots_catalog = plots_catalog
 )
 dev.off()
+
+
+### Memory complexity ----
+
+if (!is.null(loaded_results$memory_usage)) {
+  data_plot <- loaded_results$memory_usage
+  max_memory <- max(unlist(data_plot[loaded_results$model_names]), na.rm = TRUE)
+
+  if (is.finite(max_memory)) {
+    title_prefix <- "Peak memory usage w.r.t the"
+    values_name <- "Peak RSS [MB]"
+    limits <- c(0, max_memory)
+
+    pdf(paste0(path_list$images, "memory_complexity.pdf"), width = 15, height = 15)
+    plot.aggregated_data(
+      loaded_results, data_plot, title_prefix, values_name,
+      order = order, limits = limits, plots_catalog = plots_catalog
+    )
+    dev.off()
+  }
+}
 
 
 
@@ -127,11 +148,11 @@ pdf(paste0(path_list$images, "rmse.pdf"), width = 15, height = 15)
 data_plot <- loaded_results$rmse$reconstruction_locs
 title_prefix <- "RMSE[Reconstruction] at locations w.r.t the"
 values_name <- "RMSE"
-limits <- c(0, max(data_plot[loaded_results$model_names]))
+limits <- c(0, max(unlist(data_plot[loaded_results$model_names]), na.rm = TRUE))
 
 ## Plot aggregated results
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names,
+  loaded_results, data_plot, title_prefix, values_name,
   order = order, limits = limits
 )
 
@@ -141,11 +162,11 @@ plot.aggregated_data(
 data_plot <- loaded_results$rmse$scores_orth
 title_prefix <- "RMSE[Scores orthogonality] at locations w.r.t the"
 values_name <- "RMSE"
-limits <- c(0, max(data_plot[loaded_results$model_names]))
+limits <- c(0, max(unlist(data_plot[loaded_results$model_names]), na.rm = TRUE))
 
 ## Plot aggregated results
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names,
+  loaded_results, data_plot, title_prefix, values_name,
   order = order, limits = limits
 )
 
@@ -155,11 +176,11 @@ plot.aggregated_data(
 data_plot <- loaded_results$rmse$scores
 title_prefix <- "RMSE[Scores] w.r.t the"
 values_name <- "RMSE"
-limits <- c(0, max(data_plot[loaded_results$model_names]))
+limits <- c(0, max(unlist(data_plot[loaded_results$model_names]), na.rm = TRUE))
 
 ## Plot aggregated results
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names,
+  loaded_results, data_plot, title_prefix, values_name,
   order = order, limits = limits
 )
 
@@ -169,11 +190,11 @@ plot.aggregated_data(
 data_plot <- loaded_results$rmse$loadings_locs
 title_prefix <- "RMSE[Loadings] at locations w.r.t the"
 values_name <- "RMSE"
-limits <- c(0, max(data_plot[loaded_results$model_names]))
+limits <- c(0, max(unlist(data_plot[loaded_results$model_names]), na.rm = TRUE))
 
 ## Plot aggregated results
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names,
+  loaded_results, data_plot, title_prefix, values_name,
   order = order, limits = limits
 )
 
@@ -195,7 +216,7 @@ limits <- c(-12, 1)
 
 ## Plot aggregated results
 plot.aggregated_data(
-  loaded_results, data_plot, title_prefix, values_names,
+  loaded_results, data_plot, title_prefix, values_name,
   order = order, limits = limits
 )
 

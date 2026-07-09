@@ -39,10 +39,12 @@ MVPCA <- function(data, test_options) {
   model <- list()
   
   # Fit multivariate PCA ----
+  gc(reset = TRUE)
   start.time <- Sys.time()
   X <- data$X
   n_comp <- test_options$model_options$n_comp
   model_MV_PCA <- prcomp(X, center = FALSE, rank. = n_comp)
+  memory_usage <- r_peak_memory_mb()
   end.time <- Sys.time()
   cat(paste("finished after", end.time - start.time, attr(end.time - start.time, "units"), "\n"))
   
@@ -59,6 +61,7 @@ MVPCA <- function(data, test_options) {
   model$results$X_hat_locs <- X_hat_locs
   model$results$lambda <- rep(0, n_comp)
   model$results$execution_time <- end.time - start.time
+  model$results$memory_usage <- memory_usage
   
   # Add flags ----
   model$model_traits$is_functional   <- FALSE
@@ -132,11 +135,11 @@ fPCA <- function(model_name, domain, data, path_list, test_options) {
   )
   
   # Run C++ executable ----
-  start.time <- Sys.time()
-  system(paste0("cd ", path_cpp_script, " && ", "./fit_model ", file_name_params),
-         ignore.stdout = IGNORE_CPP_OUTPUT)
-  end.time <- Sys.time()
-  cat(paste("finished after", end.time - start.time, attr(end.time - start.time, "units"), "\n"))
+  run_stats <- system_with_memory(
+    paste0("cd ", path_cpp_script, " && ", "./fit_model ", file_name_params),
+    ignore.stdout = IGNORE_CPP_OUTPUT
+  )
+  cat(paste("finished after", run_stats$execution_time, attr(run_stats$execution_time, "units"), "\n"))
   
   # Save results ----
   
@@ -147,7 +150,8 @@ fPCA <- function(model_name, domain, data, path_list, test_options) {
   model$results$X_hat <- as.matrix(read.csv(paste(path_tmp_results, "reconstruction.csv", sep = "")))
   model$results$X_hat_locs <- as.matrix(read.csv(paste(path_tmp_results, "reconstruction_at_locs.csv", sep = "")))
   model$results$lambda <- as.matrix(read.csv(paste(path_tmp_results, "lambda.csv", sep = "")))
-  model$results$execution_time <- end.time - start.time
+  model$results$execution_time <- run_stats$execution_time
+  model$results$memory_usage <- run_stats$memory_usage
   
   # Add flags ----
   model$model_traits$is_functional <- FALSE
