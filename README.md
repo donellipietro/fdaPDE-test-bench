@@ -23,26 +23,26 @@ To run tests using the provided utilities, follow these steps:
    make build PROFILE=macbook
    ```
 
-   Local C++ suites also need a compiled model. Set `PATH_FDAPDE_CPP` to a
-   checkout containing `fdaPDE/models.h`; on macOS, Homebrew GCC, Eigen, and
-   Ipopt worked for the bundled example:
+   The smoothing example clones and builds its two configured fdaPDE refs into
+   this repository. Point `FDAPDE_CPP_REPOSITORY` at a local fdaPDE-cpp clone:
 
    ```bash
-   PATH_FDAPDE_CPP=/path/to/fdaPDE-cpp \ 
+   FDAPDE_CPP_REPOSITORY=/path/to/fdaPDE-cpp \
+   FDAPDE_CPP_FEM_REF=stable \
+   FDAPDE_CPP_SPLINE_REF=develop-Splines \
    PATH_EIGEN_INCLUDE=/opt/homebrew/opt/eigen/include/eigen3 \
    CXX=/opt/homebrew/bin/g++-15 \
-   make build PROFILE=macbook
-
-   PATH_IPOPT_INCLUDE=/opt/homebrew/opt/ipopt/include/coin-or \
-   PATH_IPOPT_LIB=/opt/homebrew/opt/ipopt/lib \
-   LDLIBS=-lipopt \
-   make compile MODEL=fPCA-2D
+   make build_smoothing PROFILE=macbook
    ```
+
+   The exact configuration keys are `FDAPDE_CPP_REPOSITORY`,
+   `FDAPDE_CPP_FEM_REF`, and `FDAPDE_CPP_SPLINE_REF`. Clones are created at
+   `.fdapde-cpp/fem` and `.fdapde-cpp/spline`; both paths are ignored.
 
 3. Run a suite through the strategy declared by the active profile:
 
    ```bash
-   make run_test TEST_SUITE=example_data_decomposition TEST_NAME=test1
+   make run_test TEST_SUITE=smoothing-example TEST_NAME=all
    ```
 
 Profiles can set `TEST_EXECUTION_STRATEGY` to `serial`, `parallel`, or `slurm`,
@@ -51,8 +51,26 @@ and `COMPILE_STRATEGY` to `local` or `slurm`.
 For a small queue/batch check, pass `SMOKE_TEST=1`:
 
 ```bash
-SMOKE_TEST=1 make run_test TEST_SUITE=example_data_decomposition TEST_NAME=test1
+SMOKE_TEST=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```
+
+### Smoothing Example
+
+The truth on `[0,1]` is
+`sin(2*pi*x) + 0.5*sin(4*pi*x) + 0.25*sin(8*pi*x)`. For observation locations
+`x_i`, the configured SNR is
+`mean((f(x_i) - mean(f(x_i)))^2) / sigma^2`, and noise is independent
+`N(0, sigma^2)` with recorded seeds. The full suite uses 30 repetitions and:
+
+- `vary_n_locs`: `40, 80, 160`, with `n_nodes=81` and `SNR=10`.
+- `vary_n_nodes`: `21, 41, 81`, with `n_locs=120` and `SNR=10`.
+- `vary_snr`: `2, 5, 10, 20`, with `n_locs=120` and `n_nodes=81`.
+
+Normalized RMSE is
+`sqrt(mean((f_hat-f)^2)) / sqrt(mean((f-mean(f))^2))` on 1001 common points.
+Wall time uses a monotonic clock. CPU time is C++ process CPU seconds from
+`std::clock`; CPU usage is `100 * CPU seconds / wall seconds`. Timings cover
+domain/model construction, GCV, the final fit, and dense-grid evaluation.
 
 ### Makefile
 
@@ -61,6 +79,9 @@ The `Makefile` provided in this repository includes several targets to automate 
 - `install_femR`: Installs the `femR` package by executing the `install_femR.R` script located in the `src/installation/` directory.
 - `install`: Installs repository R dependencies.
 - `build`: Writes `.env`, creates generated directories, and installs dependencies.
+- `build_smoothing`: Builds the environment, clones both configured refs, and compiles both SRPDE drivers.
+- `prepare_fdapde`: Refreshes the ignored branch-specific fdaPDE clones.
+- `compile_smoothing`: Compiles FEM against the FEM clone and splines against the spline clone.
 - `compile`: Compiles one model using the profile compile strategy.
 - `compile_all`: Compiles every model using the profile compile strategy.
 - `run_test`: Runs one test using the profile execution strategy.

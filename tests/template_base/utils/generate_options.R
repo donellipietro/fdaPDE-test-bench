@@ -35,7 +35,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
         model_names = model_names,
         model_labels = model_labels,
         model_colors = model_colors,
-        cpp_script = "fPCA-2D",
+        cpp_script = "model-name",
         test_options = list(
           n_reps = n_reps,
           varying_options = c("n_nodes", "n_stat_units", "NSR")

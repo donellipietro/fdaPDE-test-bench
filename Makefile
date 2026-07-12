@@ -52,14 +52,19 @@ PATH_LOGS := $(call config_value,PATH_LOGS)
 PATH_TMP_DATA := $(call config_value,PATH_TMP_DATA)
 PATH_TMP_RESULTS := $(call config_value,PATH_TMP_RESULTS)
 PATH_BUILD := $(call config_value,PATH_BUILD)
+FDAPDE_CPP_REPOSITORY := $(call config_value,FDAPDE_CPP_REPOSITORY)
+FDAPDE_CPP_FEM_REF := $(call config_value,FDAPDE_CPP_FEM_REF)
+FDAPDE_CPP_SPLINE_REF := $(call config_value,FDAPDE_CPP_SPLINE_REF)
+PATH_FDAPDE_CPP_FEM := $(call config_value,PATH_FDAPDE_CPP_FEM)
+PATH_FDAPDE_CPP_SPLINE := $(call config_value,PATH_FDAPDE_CPP_SPLINE)
 TEST_EXECUTION_STRATEGY := $(call config_value,TEST_EXECUTION_STRATEGY)
 COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
 
 
 # Targets ----
-.PHONY: help config write_env install install_femR build create_dirs \
+.PHONY: help config write_env install install_femR build build_smoothing create_dirs \
         ensure_env \
-        compile compile_all \
+        prepare_fdapde compile_smoothing compile compile_all \
         clean_tmp clean_compiled clean_links clean clean_test distclean \
         run_test inspect_results
 
@@ -130,6 +135,18 @@ build:
 		$(MAKE) --no-print-directory config install PROFILE="$(TESTBENCH_PROFILE)" && \
 		printf 'Profile %s build completed.\n\n' "$(TESTBENCH_PROFILE)"; \
 	fi
+
+## Clone configured fdaPDE refs and compile the paired smoothing binaries
+build_smoothing: write_env create_dirs
+	@$(MAKE) --no-print-directory compile_smoothing PROFILE="$(TESTBENCH_PROFILE)"
+
+prepare_fdapde: ensure_env
+	@./cpp/clone_fdapde.sh "$(FDAPDE_CPP_REPOSITORY)" "$(FDAPDE_CPP_FEM_REF)" "$(PATH_FDAPDE_CPP_FEM)"
+	@./cpp/clone_fdapde.sh "$(FDAPDE_CPP_REPOSITORY)" "$(FDAPDE_CPP_SPLINE_REF)" "$(PATH_FDAPDE_CPP_SPLINE)"
+
+compile_smoothing: ensure_env prepare_fdapde
+	@FDAPDE_CPP_OVERRIDE="$(PATH_FDAPDE_CPP_FEM)" ./cpp/compile.sh smoothing-example fit_model_fem
+	@FDAPDE_CPP_OVERRIDE="$(PATH_FDAPDE_CPP_SPLINE)" ./cpp/compile.sh smoothing-example fit_model_spline
 
 # Compile targets ----
 

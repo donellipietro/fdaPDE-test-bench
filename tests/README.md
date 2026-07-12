@@ -4,7 +4,7 @@ Each test suite lives in `tests/<suite_name>/` and is run through the root
 Makefile:
 
 ```bash
-make run_test TEST_SUITE=example_data_decomposition TEST_NAME=test1
+make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```
 
 `make run_test` uses the active profile from `config.R`: `serial`, `parallel`,
@@ -36,7 +36,7 @@ scripts.
 
 ## Bundled Suites
 
-- `example_data_decomposition`: runnable fPCA-oriented example.
+- `smoothing-example`: paired 1D SRPDE FEM/spline experiments.
 - `template_base`: copy this when starting a new suite, then fill in the
   placeholders.
 
@@ -60,5 +60,5 @@ Slurm jobs. Suite `config.R` files should parse it and `generate_options.R`
 should use it to reduce repetitions and/or option grids.
 
 ```bash
-SMOKE_TEST=1 make run_test TEST_SUITE=example_data_decomposition TEST_NAME=test1
+SMOKE_TEST=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```

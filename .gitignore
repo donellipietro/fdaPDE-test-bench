@@ -15,6 +15,7 @@
 /data/*
 /build
 /tmp
+/.fdapde-cpp
 /cpp/ipopt.opt
 /cpp/*/fit_model*
 /.idea/

@@ -61,7 +61,7 @@ MV <- function(data, test_options) {
 }
 
 
-## Function: fPCA
+## Function: external fdaPDE model
 # - Args:
 #   * model_name: string identifying the functional model variant
 #   * domain: list containing mesh information ($fdapde_mesh)

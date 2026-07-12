@@ -21,8 +21,8 @@ args <- commandArgs(trailingOnly = TRUE)
 ## Parse the arguments, if any
 if (length(args) == 0) {
   ## Defaults
-  test_suite     <- "example_data_decomposition"
-  name_main_test <- "test1"
+  test_suite     <- "smoothing-example"
+  name_main_test <- "all"
 } else {
   ## Set the requested configuration
   test_suite     <- args[1]

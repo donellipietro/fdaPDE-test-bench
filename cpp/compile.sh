@@ -54,6 +54,11 @@ set -a
 source "${PROJECT_DIR}/.env"
 set +a
 
+if [[ -n "${FDAPDE_CPP_OVERRIDE:-}" ]]; then
+  PATH_FDAPDE_CPP="${FDAPDE_CPP_OVERRIDE}"
+  PATH_FDAPDE_CORE="${FDAPDE_CPP_OVERRIDE}/fdaPDE/core"
+fi
+
 path_required() {
   local name="$1"
   local value="${!name:-}"
@@ -253,13 +258,14 @@ list_targets_for_model() {
 
 headers_newer_than() {
   local out="$1"
-  local newer
+  local newer root
 
-  newer="$(
-    find "${PATH_CPP}" -type f \( -name '*.h' -o -name '*.hpp' \) \
-      -newer "${out}" -print -quit
-  )"
-  [[ -n "${newer}" ]]
+  for root in "${PATH_CPP}" "${PATH_FDAPDE_CPP:-}/fdaPDE"; do
+    [[ -d "${root}" ]] || continue
+    newer="$(find "${root}" -type f \( -name '*.h' -o -name '*.hpp' \) -newer "${out}" -print -quit)"
+    [[ -z "${newer}" ]] || return 0
+  done
+  return 1
 }
 
 normalized_compile_jobs() {
