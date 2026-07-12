@@ -68,9 +68,17 @@ The truth on `[0,1]` is
 
 Normalized RMSE is
 `sqrt(mean((f_hat-f)^2)) / sqrt(mean((f-mean(f))^2))` on 1001 common points.
-Wall time uses a monotonic clock. CPU time is C++ process CPU seconds from
-`std::clock`; CPU usage is `100 * CPU seconds / wall seconds`. Timings cover
-domain/model construction, GCV, the final fit, and dense-grid evaluation.
+Peak RAM is the maximum resident set size reported for each external C++ fit by
+`/usr/bin/time`: bytes are divided by `1024^2` on macOS and KiB by `1024` on
+Linux, so `peak_ram_mib` is always MiB. Wall time uses a monotonic clock. CPU
+time is C++ process CPU seconds from `std::clock`; CPU usage is
+`100 * CPU seconds / wall seconds`. Timings cover domain/model construction,
+GCV, the final fit, and dense-grid evaluation.
+
+The suite follows `template_base`: one option per experiment level, 30
+`batch_*` repetitions, model routing through `utils/wrappers.R`, evaluation via
+`fit_and_evaluate.R` and `models_evaluation.R`, aggregation through the shared
+result loaders, and plots through shared `plot.aggregated_data()`.
 
 ### Makefile
 

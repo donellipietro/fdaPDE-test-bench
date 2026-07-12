@@ -2,6 +2,11 @@ TEST_SUITE <- "SRPDE smoothing example"
 test_suite <- "smoothing-example"
 test_groups <- list(all = c("vary_n_locs", "vary_n_nodes", "vary_snr"))
 name_main_test_default <- "all"
+FORCE_FIT <- FALSE
+FORCE_EVALUATE <- FALSE
+IGNORE_CPP_OUTPUT <- TRUE
+RUN <- list(tests = TRUE, analysis = TRUE, quantitative_analysis = TRUE)
+order <- 1L
 
 smoothing_experiment_spec <- function(smoke = FALSE) {
   list(

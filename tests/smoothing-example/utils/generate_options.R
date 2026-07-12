@@ -4,35 +4,32 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   values <- spec$grids[[name_main_test]]
   if (is.null(values)) stop("unknown smoothing experiment family: ", name_main_test)
 
-  options_list <- list()
-  index <- 1L
-  for (value in values) {
-    for (repetition in seq_len(spec$repetitions)) {
-      dimensions <- spec$defaults
-      if (name_main_test == "vary_n_locs") dimensions$n_locs <- as.integer(value)
-      if (name_main_test == "vary_n_nodes") dimensions$n_nodes <- as.integer(value)
-      if (name_main_test == "vary_snr") dimensions$snr <- as.numeric(value)
-
-      value_label <- gsub("\\.", "p", format(value, trim = TRUE, scientific = FALSE))
-      options_list[[index]] <- list(
-        name_test = sprintf("%s_value_%s_rep_%02d", name_main_test, value_label, repetition),
-        cpp_script = "smoothing-example",
-        family = name_main_test,
-        level = as.numeric(value),
-        repetition = repetition,
-        seed = spec$seed_base + repetition,
-        expected_repetitions = spec$repetitions,
-        smoke_test = smoke,
-        dimensions = c(dimensions, list(evaluation_points = spec$evaluation_points)),
-        regularization = list(
-          lambda_exponents = spec$lambda_exponents,
-          gcv_probes = spec$gcv_probes
-        ),
-        test_options = list(threading = "single")
+  varying_option <- sub("^vary_", "", name_main_test)
+  options_list <- lapply(values, function(value) {
+    dimensions <- spec$defaults
+    dimensions[[varying_option]] <- value
+    value_label <- gsub("\\.", "p", format(value, trim = TRUE, scientific = FALSE))
+    list(
+      name_test = sprintf("%s_%s_%s", name_main_test, varying_option, value_label),
+      cpp_script = "smoothing-example",
+      family = name_main_test,
+      model_names = c("fem", "spline"),
+      model_labels = c("FEM", "Spline"),
+      model_colors = c("#0072B2", "#D55E00"),
+      dimensions = c(dimensions, list(evaluation_points = spec$evaluation_points)),
+      regularization = list(
+        lambda_exponents = spec$lambda_exponents,
+        gcv_probes = spec$gcv_probes
+      ),
+      noise = list(seed_base = spec$seed_base),
+      test_options = list(
+        n_reps = spec$repetitions,
+        varying_options = varying_option,
+        threading = "single",
+        smoke_test = smoke
       )
-      index <- index + 1L
-    }
-  }
+    )
+  })
 
   write_options_json(options_list, path_queue)
 }

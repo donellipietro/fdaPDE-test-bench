@@ -22,13 +22,13 @@ format_time <- function(t) {
 }
 
 
-## Function: parse_peak_rss_mb
+## Function: parse_peak_rss_mib
 # - Args:
 #   * lines: output produced by /usr/bin/time
 #   * sysname: OS name, defaults to the current system
 # - Desc:
-#   Extracts peak resident memory and normalizes it to MB.
-parse_peak_rss_mb <- function(lines, sysname = Sys.info()[["sysname"]]) {
+#   Extracts peak resident memory and normalizes it to MiB.
+parse_peak_rss_mib <- function(lines, sysname = Sys.info()[["sysname"]]) {
   line <- grep("maximum resident set size|Maximum resident set size", lines, value = TRUE)
   if (length(line) == 0) return(NaN)
 
@@ -37,6 +37,9 @@ parse_peak_rss_mb <- function(lines, sysname = Sys.info()[["sysname"]]) {
 
   if (identical(sysname, "Darwin")) value / 1024^2 else value / 1024
 }
+
+# legacy alias retained for existing suites
+parse_peak_rss_mb <- parse_peak_rss_mib
 
 
 ## Function: r_peak_memory_mb
@@ -54,30 +57,38 @@ r_peak_memory_mb <- function() {
 #   * command: shell command to execute
 #   * ignore.stdout: passed through to system2
 # - Desc:
-#   Runs an external command and returns elapsed time plus peak RSS in MB.
+#   Runs an external command and returns elapsed time, status, and peak RSS in MiB.
 system_with_memory <- function(command, ignore.stdout = FALSE) {
   start.time <- Sys.time()
 
   time_bin <- "/usr/bin/time"
   if (!file.exists(time_bin)) {
-    system(command, ignore.stdout = ignore.stdout)
-    return(list(execution_time = Sys.time() - start.time, memory_usage = NaN))
+    status <- system(command, ignore.stdout = ignore.stdout)
+    return(list(
+      execution_time = Sys.time() - start.time,
+      peak_ram_mib = NaN,
+      memory_usage = NaN,
+      status = status
+    ))
   }
 
   time_file <- tempfile()
   on.exit(unlink(time_file), add = TRUE)
 
   time_arg <- if (identical(Sys.info()[["sysname"]], "Darwin")) "-l" else "-v"
-  system2(
+  status <- system2(
     time_bin,
-    c(time_arg, "-o", time_file, "sh", "-c", command),
+    c(time_arg, "-o", shQuote(time_file), "sh", "-c", shQuote(command)),
     stdout = if (ignore.stdout) FALSE else "",
     stderr = ""
   )
 
+  peak_ram_mib <- parse_peak_rss_mib(readLines(time_file, warn = FALSE))
   list(
     execution_time = Sys.time() - start.time,
-    memory_usage = parse_peak_rss_mb(readLines(time_file, warn = FALSE))
+    peak_ram_mib = peak_ram_mib,
+    memory_usage = peak_ram_mib,
+    status = status
   )
 }
 

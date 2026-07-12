@@ -36,7 +36,8 @@ scripts.
 
 ## Bundled Suites
 
-- `smoothing-example`: paired 1D SRPDE FEM/spline experiments.
+- `smoothing-example`: paired 1D SRPDE FEM/spline experiments following the
+  template batch/wrapper/evaluation flow, with peak RAM recorded in MiB.
 - `template_base`: copy this when starting a new suite, then fill in the
   placeholders.
 
