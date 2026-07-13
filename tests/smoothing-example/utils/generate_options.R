@@ -18,14 +18,20 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   ## Models compared in every experiment
   # - model_names: internal indexing and binary selection
   # - model_labels: plot labels
-  model_names <- c("fem", "spline")
-  model_labels <- c("FEM", "Spline")
+  model_names <- c("SRPDE-FEM", "SRPDE-SPLINES")
+  model_labels <- model_names
   model_colors <- c("#0072B2", "#D55E00")
 
   ## Options common to all three experiments
   n_reps <- if (SMOKE_TEST) 2L else 30L
   n_evaluation_points <- 1001L
   seed <- 141200L
+
+  ## Sine coefficients are sampled once per repetition and shared by both models
+  # - means retain the reference mixture used by the original fixed truth
+  # - standard deviations are 10 percent of the corresponding means
+  coefficient_mean <- c(1, 0.5, 0.25)
+  coefficient_sd <- c(0.1, 0.05, 0.025)
 
   ## Fixed GCV candidate grid passed unchanged to both normalized solvers
   lambda_grid <- 10^seq(-6, 0, length.out = 9L)
@@ -48,6 +54,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           n_nodes = 81L,
           n_locs = if (SMOKE_TEST) 40L else c(40L, 80L, 160L),
           n_evaluation_points = n_evaluation_points
+        ),
+        data = list(
+          coefficient_mean = coefficient_mean,
+          coefficient_sd = coefficient_sd
         ),
         noise = list(
           SNR = 10,
@@ -89,6 +99,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           n_locs = 120L,
           n_evaluation_points = n_evaluation_points
         ),
+        data = list(
+          coefficient_mean = coefficient_mean,
+          coefficient_sd = coefficient_sd
+        ),
         noise = list(
           SNR = 10,
           seed = seed
@@ -128,6 +142,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           n_nodes = 81L,
           n_locs = 120L,
           n_evaluation_points = n_evaluation_points
+        ),
+        data = list(
+          coefficient_mean = coefficient_mean,
+          coefficient_sd = coefficient_sd
         ),
         noise = list(
           SNR = if (SMOKE_TEST) 2 else c(2, 5, 10, 20),

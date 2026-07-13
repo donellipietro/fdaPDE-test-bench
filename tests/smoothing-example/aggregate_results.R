@@ -24,7 +24,6 @@ source("src/utils/load_results_utils.R")
 source("src/utils/plotting_utils.R")
 source("tests/smoothing-example/config.R")
 source("tests/smoothing-example/utils/generate_options.R")
-source("tests/smoothing-example/utils/generate_data.R")
 
 ## Select the requested test families ----
 args <- commandArgs(trailingOnly = TRUE)
@@ -67,7 +66,6 @@ for (family in families) {
       n_locs = options$dimensions$n_locs,
       n_nodes = options$dimensions$n_nodes,
       SNR = options$noise$SNR,
-      seed = options$noise$seed,
       n_reps = options$test_options$n_reps,
       stringsAsFactors = FALSE
     )
@@ -87,28 +85,24 @@ for (family in families) {
   dimensions <- option_metadata[metadata_index, , drop = FALSE]
   repetition <- ave(seq_along(level), level, FUN = seq_along)
 
-  locations <- lapply(dimensions$n_locs, function(n) seq(0, 1, length.out = n))
-  signal_variance <- vapply(
-    locations,
-    function(x) mean((truth_function(x) - mean(truth_function(x)))^2),
-    numeric(1)
-  )
-
   ## Flatten the shared loaded structure into one row per model fit
   for (model_name in loaded$model_names) {
     all_rows[[paste(family, model_name)]] <- data.frame(
       family = family,
       level = level,
       repetition = repetition,
-      seed = dimensions$seed + repetition,
+      seed = loaded$seed[[model_name]],
       smoke_test = SMOKE_TEST,
       n_locs = dimensions$n_locs,
       n_nodes = dimensions$n_nodes,
       snr = dimensions$SNR,
-      signal_variance = signal_variance,
-      noise_sigma = sqrt(signal_variance / dimensions$SNR),
+      coefficient_sin_2pi = loaded$coefficients$sin_2pi[[model_name]],
+      coefficient_sin_4pi = loaded$coefficients$sin_4pi[[model_name]],
+      coefficient_sin_8pi = loaded$coefficients$sin_8pi[[model_name]],
+      signal_variance = loaded$signal_variance[[model_name]],
+      noise_sigma = loaded$noise_sigma[[model_name]],
       discretization = model_name,
-      source_ref = if (model_name == "fem") cfg$FDAPDE_CPP_FEM_REF else cfg$FDAPDE_CPP_SPLINE_REF,
+      source_ref = if (model_name == "SRPDE-FEM") cfg$FDAPDE_CPP_FEM_REF else cfg$FDAPDE_CPP_SPLINE_REF,
       n_basis = loaded$n_basis[[model_name]],
       linear_system_dimension = loaded$linear_system_dimension[[model_name]],
       wall_seconds = loaded$execution_time[[model_name]],
@@ -188,19 +182,21 @@ for (family in families) {
 results <- do.call(rbind, all_rows)
 row.names(results) <- NULL
 numeric_metrics <- c(
-  "n_basis", "linear_system_dimension", "wall_seconds", "peak_ram_mib",
+  "coefficient_sin_2pi", "coefficient_sin_4pi", "coefficient_sin_8pi",
+  "signal_variance", "noise_sigma", "n_basis", "linear_system_dimension",
+  "wall_seconds", "peak_ram_mib",
   "cpu_seconds", "cpu_usage_percent", "setup_seconds", "gcv_seconds",
   "final_fit_seconds", "solver_seconds", "prediction_seconds", "lambda", "gcv", "normalized_rmse"
 )
 if (any(!is.finite(as.matrix(results[numeric_metrics])))) stop("non-finite smoothing telemetry")
 
 ## Confirm that reported solver dimensions match each implementation
-if (any(results$linear_system_dimension[results$discretization == "fem"] !=
-        2 * results$n_basis[results$discretization == "fem"])) {
+if (any(results$linear_system_dimension[results$discretization == "SRPDE-FEM"] !=
+        2 * results$n_basis[results$discretization == "SRPDE-FEM"])) {
   stop("FEM driver did not report the expected coupled system dimension")
 }
-if (any(results$linear_system_dimension[results$discretization == "spline"] !=
-        results$n_basis[results$discretization == "spline"])) {
+if (any(results$linear_system_dimension[results$discretization == "SRPDE-SPLINES"] !=
+        results$n_basis[results$discretization == "SRPDE-SPLINES"])) {
   stop("spline driver did not report the expected direct system dimension")
 }
 
@@ -208,6 +204,18 @@ phase_sum <- rowSums(results[c(
   "setup_seconds", "gcv_seconds", "final_fit_seconds", "prediction_seconds"
 )])
 if (any(abs(results$wall_seconds - phase_sum) > 1e-9)) stop("phase timings do not sum to wall time")
+
+## Confirm that both models used the same sampled truth and noise per repetition
+paired_fields <- c(
+  "seed", "coefficient_sin_2pi", "coefficient_sin_4pi",
+  "coefficient_sin_8pi", "signal_variance", "noise_sigma"
+)
+paired_results <- split(results, interaction(results$family, results$level, results$repetition, drop = TRUE))
+paired <- vapply(paired_results, function(x) {
+  nrow(x) == 2L && length(unique(x$discretization)) == 2L &&
+    all(vapply(x[paired_fields], function(values) length(unique(values)) == 1L, logical(1)))
+}, logical(1))
+if (any(!paired)) stop("models did not receive identical sampled data")
 
 ## Validate the expected repetition count in every cell ----
 expected <- do.call(rbind, expected_rows)
@@ -226,6 +234,12 @@ summary <- do.call(rbind, lapply(split_results, function(x) {
     n_nodes = x$n_nodes[1], snr = x$snr[1], discretization = x$discretization[1],
     repetitions = nrow(x), n_basis = x$n_basis[1],
     linear_system_dimension = x$linear_system_dimension[1],
+    coefficient_sin_2pi_mean = mean(x$coefficient_sin_2pi),
+    coefficient_sin_2pi_sd = sd(x$coefficient_sin_2pi),
+    coefficient_sin_4pi_mean = mean(x$coefficient_sin_4pi),
+    coefficient_sin_4pi_sd = sd(x$coefficient_sin_4pi),
+    coefficient_sin_8pi_mean = mean(x$coefficient_sin_8pi),
+    coefficient_sin_8pi_sd = sd(x$coefficient_sin_8pi),
     normalized_rmse_mean = mean(x$normalized_rmse), normalized_rmse_sd = sd(x$normalized_rmse),
     peak_ram_mib_mean = mean(x$peak_ram_mib), peak_ram_mib_sd = sd(x$peak_ram_mib),
     wall_seconds_mean = mean(x$wall_seconds), setup_seconds_mean = mean(x$setup_seconds),

@@ -6,7 +6,7 @@
 
 ## Function: fit_model
 # - Args:
-#   * model_name: fem or spline
+#   * model_name: SRPDE-FEM or SRPDE-SPLINES
 #   * domain: unused; retained for the standard wrapper signature
 #   * data: generated locations, response, evaluation grid, and seed
 #   * path_list: standard testbench data, result, log, and binary paths
@@ -15,9 +15,12 @@
 #   Routes FEM and spline to distinct binaries, checks the binary-reported
 #   discretization, and collects timing, RAM, fit, and prediction outputs.
 fit_model <- function(model_name, domain, data, path_list, test_options) {
-  if (!model_name %in% c("fem", "spline")) {
+  solver_name <- switch(
+    model_name,
+    "SRPDE-FEM" = "fem",
+    "SRPDE-SPLINES" = "spline",
     stop(paste("The model", model_name, "does not exist"))
-  }
+  )
 
   ## Paths ----
   prefix <- paste0("batch_", test_options$batch_index, "_", model_name)
@@ -49,7 +52,7 @@ fit_model <- function(model_name, domain, data, path_list, test_options) {
   write_json(params, params_file, auto_unbox = TRUE, digits = NA, pretty = TRUE)
 
   ## Run the model-specific binary and measure its peak resident memory ----
-  binary <- file.path(path_list$cpp_script, paste0("fit_model_", model_name))
+  binary <- file.path(path_list$cpp_script, paste0("fit_model_", solver_name))
   command <- paste(shQuote(binary), shQuote(params_file), ">", shQuote(log_file), "2>&1")
   run_stats <- system_with_memory(command, ignore.stdout = IGNORE_CPP_OUTPUT)
   if (!identical(run_stats$status, 0L)) stop("C++ fit failed; see ", log_file)
@@ -57,7 +60,7 @@ fit_model <- function(model_name, domain, data, path_list, test_options) {
 
   ## Load and validate outputs ----
   telemetry <- fromJSON(telemetry_file)
-  if (!identical(telemetry$discretization, model_name)) {
+  if (!identical(telemetry$discretization, solver_name)) {
     stop("binary/model mismatch: requested ", model_name, " but driver reported ", telemetry$discretization)
   }
   prediction <- read.csv(prediction_file, header = TRUE)[[1]]

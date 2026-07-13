@@ -15,10 +15,18 @@ normalized_rmse <- function(estimate, truth) {
 #   * model: fitted model object returned by fit_model
 #   * data: generated data containing the dense-grid truth
 # - Desc:
-#   Returns the standard nested quantitative-result structure loaded by
-#   load_quantitative_results() and load_all_quantitiative_results().
+#   Returns fit metrics and the realized data-generating quantities in the
+#   standard nested structure loaded by the shared aggregation utilities.
 evaluate_results <- function(model, data) {
   list(
+    seed = data$seed,
+    signal_variance = data$signal_variance,
+    noise_sigma = data$noise_sigma,
+    coefficients = list(
+      sin_2pi = data$coefficients[1],
+      sin_4pi = data$coefficients[2],
+      sin_8pi = data$coefficients[3]
+    ),
     execution_time = model$results$execution_time,
     peak_ram_mib = model$results$peak_ram_mib,
     cpu_seconds = model$results$cpu_seconds,

@@ -56,8 +56,11 @@ SMOKE_TEST=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 
 ### Smoothing Example
 
-The truth on `[0,1]` is
-`sin(2*pi*x) + 0.5*sin(4*pi*x) + 0.25*sin(8*pi*x)`. For observation locations
+For repetition `r`, the truth on `[0,1]` is
+`a1_r*sin(2*pi*x) + a2_r*sin(4*pi*x) + a3_r*sin(8*pi*x)`. The coefficients
+are independent Gaussian draws with means `(1, 0.5, 0.25)` and standard
+deviations `(0.1, 0.05, 0.025)`. One sampled coefficient vector and one noise
+vector are shared by `SRPDE-FEM` and `SRPDE-SPLINES`. For observation locations
 `x_i`, the configured SNR is
 `mean((f(x_i) - mean(f(x_i)))^2) / sigma^2`, and noise is independent
 `N(0, sigma^2)` with recorded seeds. The full suite uses 30 repetitions and:
@@ -73,9 +76,10 @@ Peak RAM is the maximum resident set size reported for each external C++ fit by
 Linux, so `peak_ram_mib` is always MiB. Wall time uses a monotonic clock. CPU
 time is C++ process CPU seconds from `std::clock`; CPU usage is
 `100 * CPU seconds / wall seconds`. Timings cover domain/model construction,
-GCV, the final fit, and dense-grid evaluation. The driver also records those
-four phases separately; `solver_seconds` is GCV plus the final fit, while total
-wall time intentionally includes spline basis assembly and evaluation.
+GCV, the final fit, and dense-grid evaluation. Both models evaluate the fitted
+function at all 1001 grid points in C++ as part of `prediction_seconds`. The
+driver records all four phases separately; `solver_seconds` is GCV plus the
+final fit, while total wall time includes setup and evaluation for both models.
 
 The suite follows `template_base`: each family declares an explicit `options`
 list, expands only `test_options$varying_options` with `explode_options()`, and
