@@ -52,6 +52,7 @@ PATH_LOGS := $(call config_value,PATH_LOGS)
 PATH_TMP_DATA := $(call config_value,PATH_TMP_DATA)
 PATH_TMP_RESULTS := $(call config_value,PATH_TMP_RESULTS)
 PATH_BUILD := $(call config_value,PATH_BUILD)
+PATH_FDAPDE_CPP := $(call config_value,PATH_FDAPDE_CPP)
 TEST_EXECUTION_STRATEGY := $(call config_value,TEST_EXECUTION_STRATEGY)
 COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
 
@@ -228,6 +229,7 @@ distclean: clean clean_compiled
 	@$(RM) -r "$(PATH_IMAGES)"
 	@$(RM) -r "$(PATH_RESULTS)"
 	@$(RM) -r "$(PATH_TEST_DATA)"
+	@if [ -n "$(PATH_FDAPDE_CPP)" ]; then $(RM) -r "$(PATH_FDAPDE_CPP)"; fi
 	@$(RM) .env
 	@printf 'Additional cleanup completed.\n\n'
 

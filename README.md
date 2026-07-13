@@ -126,7 +126,7 @@ The `Makefile` provided in this repository includes several targets to automate 
 - `SMOKE_TEST=1 make run_test ...`: Runs the suite's reduced smoke grid.
 - `clean_tmp`: Cleans temporary queue/log files.
 - `clean`: Removes temporary files, logs, and R session files.
-- `distclean`: Combines the `clean` target with further cleanup actions, including the removal of additional generated files like images and results. It prompts for confirmation before executing to avoid accidental deletion.
+- `distclean`: Combines the `clean` target with removal of generated images, results, test data, and the repository-local fdaPDE-cpp clone. It prompts for confirmation before executing.
 
 Refer to the [`Makefile`](./Makefile) for implementation details and additional customization options.
 
