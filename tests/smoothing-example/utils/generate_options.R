@@ -52,7 +52,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
         ),
         dimensions = list(
           n_nodes = 81L,
-          n_locs = if (SMOKE_TEST) 40L else c(40L, 80L, 160L),
+          n_locs = if (SMOKE_TEST) 40L else c(20L, 40L, 80L, 160L, 320L),
           n_evaluation_points = n_evaluation_points
         ),
         data = list(
@@ -95,7 +95,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           threading = "single"
         ),
         dimensions = list(
-          n_nodes = if (SMOKE_TEST) 21L else c(21L, 41L, 81L),
+          n_nodes = if (SMOKE_TEST) 21L else c(11L, 21L, 41L, 81L, 161L),
           n_locs = 120L,
           n_evaluation_points = n_evaluation_points
         ),
@@ -148,7 +148,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
           coefficient_sd = coefficient_sd
         ),
         noise = list(
-          SNR = if (SMOKE_TEST) 2 else c(2, 5, 10, 20),
+          SNR = if (SMOKE_TEST) 2 else c(1, 2, 5, 10, 20, 50),
           seed = seed
         ),
         regularization = list(

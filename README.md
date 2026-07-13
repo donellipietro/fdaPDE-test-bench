@@ -65,9 +65,9 @@ vector are shared by `SRPDE-FEM` and `SRPDE-SPLINES`. For observation locations
 `mean((f(x_i) - mean(f(x_i)))^2) / sigma^2`, and noise is independent
 `N(0, sigma^2)` with recorded seeds. The full suite uses 30 repetitions and:
 
-- `vary_n_locs`: `40, 80, 160`, with `n_nodes=81` and `SNR=10`.
-- `vary_n_nodes`: `21, 41, 81`, with `n_locs=120` and `SNR=10`.
-- `vary_snr`: `2, 5, 10, 20`, with `n_locs=120` and `n_nodes=81`.
+- `vary_n_locs`: `20, 40, 80, 160, 320`, with `n_nodes=81` and `SNR=10`.
+- `vary_n_nodes`: `11, 21, 41, 81, 161`, with `n_locs=120` and `SNR=10`.
+- `vary_snr`: `1, 2, 5, 10, 20, 50`, with `n_locs=120` and `n_nodes=81`.
 
 Normalized RMSE is
 `sqrt(mean((f_hat-f)^2)) / sqrt(mean((f-mean(f))^2))` on 1001 common points.
@@ -89,6 +89,10 @@ writes one JSON file per level with `write_options_json()`. It then runs 30
 result loaders, and plots through shared `plot.aggregated_data()`.
 The fixed GCV grid `10^seq(-6, 0, length.out=9)` is stored directly in every
 option JSON and passed unchanged to both solvers.
+Each experiment family writes `normalized_rmse.pdf`, `peak_ram_mib.pdf`, a
+standalone `legend.pdf`, and a combined `timings.pdf`. The timing document
+contains the boxplot and line pages for wall, setup, GCV, final-fit, solver,
+prediction, and CPU times.
 
 ### Makefile
 

@@ -151,27 +151,41 @@ for (family in families) {
   )
   dev.off()
 
-  ## Produce metric PDFs through the shared aggregate plotting utility
-  plot_specs <- list(
-    normalized_rmse = list(loaded$rmse$normalized, "Normalized RMSE", "Normalized RMSE"),
-    peak_ram_mib = list(loaded$peak_ram_mib, "Peak RAM", "Peak RSS [MiB]"),
-    wall_seconds = list(loaded$execution_time, "Wall time", "Wall time [seconds]"),
-    solver_seconds = list(loaded$solver_seconds, "Solver time", "GCV + final fit [seconds]"),
-    cpu_seconds = list(loaded$cpu_seconds, "CPU time", "CPU time [seconds]")
-  )
-  for (plot_name in names(plot_specs)) {
-    plot_spec <- plot_specs[[plot_name]]
-    values <- unlist(plot_spec[[1]][loaded$model_names], use.names = FALSE)
-    pdf(file.path(image_dir, paste0(plot_name, ".pdf")), width = 10, height = 7)
-    plot.aggregated_data(
-      loaded,
-      plot_spec[[1]],
-      plot_spec[[2]],
-      plot_spec[[3]],
-      order = 1L,
-      limits = c(0, max(values, na.rm = TRUE)),
-      plots_catalog = plots_catalog
+  ## Group related pages into three outputs while retaining the shared plotter
+  plot_outputs <- list(
+    normalized_rmse = list(
+      list(loaded$rmse$normalized, "Normalized RMSE", "Normalized RMSE")
+    ),
+    peak_ram_mib = list(
+      list(loaded$peak_ram_mib, "Peak RAM", "Peak RSS [MiB]")
+    ),
+    timings = list(
+      list(loaded$execution_time, "Wall time", "Wall time [seconds]"),
+      list(loaded$setup_seconds, "Setup time", "Setup time [seconds]"),
+      list(loaded$gcv_seconds, "GCV time", "GCV time [seconds]"),
+      list(loaded$final_fit_seconds, "Final-fit time", "Final-fit time [seconds]"),
+      list(loaded$solver_seconds, "Solver time", "GCV + final fit [seconds]"),
+      list(loaded$prediction_seconds, "Prediction time", "Prediction time [seconds]"),
+      list(loaded$cpu_seconds, "CPU time", "CPU time [seconds]")
     )
+  )
+  for (output_name in names(plot_outputs)) {
+    plot_specs <- plot_outputs[[output_name]]
+    pdf(file.path(image_dir, paste0(output_name, ".pdf")), width = 10, height = 7)
+    for (i in seq_along(plot_specs)) {
+      if (i > 1L) grid::grid.newpage()
+      plot_spec <- plot_specs[[i]]
+      values <- unlist(plot_spec[[1]][loaded$model_names], use.names = FALSE)
+      plot.aggregated_data(
+        loaded,
+        plot_spec[[1]],
+        plot_spec[[2]],
+        plot_spec[[3]],
+        order = 1L,
+        limits = c(0, max(values, na.rm = TRUE)),
+        plots_catalog = plots_catalog
+      )
+    }
     dev.off()
   }
 
