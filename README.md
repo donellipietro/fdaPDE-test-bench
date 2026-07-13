@@ -30,11 +30,11 @@ To run tests using the provided utilities, follow these steps:
    make write_env create_dirs PROFILE=macbook
    ```
 
-   For the smoothing example, export the local fdaPDE-cpp source, the selected
-   outer branch, and the compiler settings before writing the environment:
+   For the smoothing example, select the outer branch and compiler settings
+   before writing the environment:
 
    ```bash
-   export FDAPDE_CPP_REPOSITORY=/path/to/fdaPDE-cpp
+   export FDAPDE_CPP_REPOSITORY=https://github.com/fdaPDE/fdaPDE-cpp.git
    export FDAPDE_CPP_BRANCH=develop-Splines
    export PATH_EIGEN_INCLUDE=/opt/homebrew/opt/eigen/include/eigen3
    export CC=/opt/homebrew/bin/gcc-15
@@ -44,7 +44,8 @@ To run tests using the provided utilities, follow these steps:
 
    The outer branch always comes from the active profile's
    `FDAPDE_CPP_BRANCH` key. The standard compile target creates or refreshes the
-   ignored repository-local `fdaPDE-cpp` clone from `FDAPDE_CPP_REPOSITORY`,
+   ignored repository-local `fdaPDE-cpp` clone from the configured remote
+   `FDAPDE_CPP_REPOSITORY`,
    then initializes `fdaPDE/core` at the selected branch's recorded gitlink.
    Compile both drivers against that stack:
 

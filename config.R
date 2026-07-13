@@ -16,7 +16,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_FDAPDE_CPP <- file.path(PATH_REPO, "fdaPDE-cpp")
     FDAPDE_CPP_REPOSITORY <- Sys.getenv(
       "FDAPDE_CPP_REPOSITORY",
-      unset = file.path(dirname(PATH_REPO), "fdaPDE-cpp")
+      unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
     )
 
     list(
@@ -64,11 +64,9 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_FDAPDE_CPP <- file.path(PATH_REPO, "fdaPDE-cpp")
     FDAPDE_CPP_REPOSITORY <- Sys.getenv(
       "FDAPDE_CPP_REPOSITORY",
-      unset = file.path(dirname(PATH_REPO), "fdaPDE-cpp")
+      unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
     )
-    SINGULARITY_BIND_PATHS <- unique(c(
-      PATH_REPO, PATH_OUTPUT, PATH_FDAPDE_CPP, FDAPDE_CPP_REPOSITORY
-    ))
+    SINGULARITY_BIND_PATHS <- unique(c(PATH_REPO, PATH_OUTPUT, PATH_FDAPDE_CPP))
     SINGULARITY_BIND_PATHS <- SINGULARITY_BIND_PATHS[nzchar(SINGULARITY_BIND_PATHS)]
 
     list(
