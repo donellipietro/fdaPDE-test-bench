@@ -81,6 +81,22 @@ for (family in families) {
 
   image_dir <- file.path(cfg$PATH_IMAGES, test_suite, family)
   dir.create(image_dir, recursive = TRUE, showWarnings = FALSE)
+  pdf(file.path(image_dir, "legend.pdf"), width = 6, height = 1.5, bg = "white")
+  par(mar = rep(0, 4))
+  plot.new()
+  legend(
+    "center",
+    legend = loaded$model_labels,
+    col = loaded$model_colors,
+    lty = 1,
+    lwd = 2,
+    pch = 15,
+    pt.cex = 1.5,
+    horiz = TRUE,
+    bty = "n"
+  )
+  dev.off()
+
   plot_specs <- list(
     normalized_rmse = list(loaded$rmse$normalized, "Normalized RMSE", "Normalized RMSE"),
     peak_ram_mib = list(loaded$peak_ram_mib, "Peak RAM", "Peak RSS [MiB]"),
