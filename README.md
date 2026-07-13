@@ -23,21 +23,39 @@ To run tests using the provided utilities, follow these steps:
    make build PROFILE=macbook
    ```
 
-   The smoothing example clones and builds its two configured fdaPDE refs into
-   this repository. Point `FDAPDE_CPP_REPOSITORY` at a local fdaPDE-cpp clone:
+   `build` installs dependencies and may access remote repositories. On an
+   already provisioned machine, initialize the profile without reinstalling:
 
    ```bash
-   FDAPDE_CPP_REPOSITORY=/path/to/fdaPDE-cpp \
-   FDAPDE_CPP_FEM_REF=stable \
-   FDAPDE_CPP_SPLINE_REF=develop-Splines \
-   PATH_EIGEN_INCLUDE=/opt/homebrew/opt/eigen/include/eigen3 \
-   CXX=/opt/homebrew/bin/g++-15 \
-   make build_smoothing PROFILE=macbook
+   make write_env create_dirs PROFILE=macbook
+   ```
+
+   For the smoothing example, export the local fdaPDE-cpp source, its two refs,
+   and the compiler settings before writing the standard environment:
+
+   ```bash
+   export FDAPDE_CPP_REPOSITORY=/path/to/fdaPDE-cpp
+   export FDAPDE_CPP_FEM_REF=stable
+   export FDAPDE_CPP_SPLINE_REF=develop-Splines
+   export PATH_EIGEN_INCLUDE=/opt/homebrew/opt/eigen/include/eigen3
+   export CC=/opt/homebrew/bin/gcc-15
+   export CXX=/opt/homebrew/bin/g++-15
+   make write_env create_dirs PROFILE=macbook
    ```
 
    The exact configuration keys are `FDAPDE_CPP_REPOSITORY`,
    `FDAPDE_CPP_FEM_REF`, and `FDAPDE_CPP_SPLINE_REF`. Clones are created at
-   `.fdapde-cpp/fem` and `.fdapde-cpp/spline`; both paths are ignored.
+   `.fdapde-cpp/fem` and `.fdapde-cpp/spline`; both paths are ignored. Prepare
+   each ref, then compile through the standard `compile` target:
+
+   ```bash
+   ./cpp/clone_fdapde.sh "$FDAPDE_CPP_REPOSITORY" "$FDAPDE_CPP_FEM_REF" .fdapde-cpp/fem
+   ./cpp/clone_fdapde.sh "$FDAPDE_CPP_REPOSITORY" "$FDAPDE_CPP_SPLINE_REF" .fdapde-cpp/spline
+   FDAPDE_CPP_OVERRIDE="$PWD/.fdapde-cpp/fem" \
+     make compile MODEL=smoothing-example TARGET=fit_model_fem
+   FDAPDE_CPP_OVERRIDE="$PWD/.fdapde-cpp/spline" \
+     make compile MODEL=smoothing-example TARGET=fit_model_spline
+   ```
 
 3. Run a suite through the strategy declared by the active profile:
 
@@ -101,9 +119,6 @@ The `Makefile` provided in this repository includes several targets to automate 
 - `install_femR`: Installs the `femR` package by executing the `install_femR.R` script located in the `src/installation/` directory.
 - `install`: Installs repository R dependencies.
 - `build`: Writes `.env`, creates generated directories, and installs dependencies.
-- `build_smoothing`: Builds the environment, clones both configured refs, and compiles both SRPDE drivers.
-- `prepare_fdapde`: Refreshes the ignored branch-specific fdaPDE clones.
-- `compile_smoothing`: Compiles FEM against the FEM clone and splines against the spline clone.
 - `compile`: Compiles one model using the profile compile strategy.
 - `compile_all`: Compiles every model using the profile compile strategy.
 - `run_test`: Runs one test using the profile execution strategy.
