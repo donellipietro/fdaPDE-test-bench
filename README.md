@@ -73,12 +73,18 @@ Peak RAM is the maximum resident set size reported for each external C++ fit by
 Linux, so `peak_ram_mib` is always MiB. Wall time uses a monotonic clock. CPU
 time is C++ process CPU seconds from `std::clock`; CPU usage is
 `100 * CPU seconds / wall seconds`. Timings cover domain/model construction,
-GCV, the final fit, and dense-grid evaluation.
+GCV, the final fit, and dense-grid evaluation. The driver also records those
+four phases separately; `solver_seconds` is GCV plus the final fit, while total
+wall time intentionally includes spline basis assembly and evaluation.
 
-The suite follows `template_base`: one option per experiment level, 30
-`batch_*` repetitions, model routing through `utils/wrappers.R`, evaluation via
-`fit_and_evaluate.R` and `models_evaluation.R`, aggregation through the shared
+The suite follows `template_base`: each family declares an explicit `options`
+list, expands only `test_options$varying_options` with `explode_options()`, and
+writes one JSON file per level with `write_options_json()`. It then runs 30
+`batch_*` repetitions, routes models through `utils/wrappers.R`, evaluates via
+`fit_and_evaluate.R` and `models_evaluation.R`, aggregates through the shared
 result loaders, and plots through shared `plot.aggregated_data()`.
+The fixed GCV grid `10^seq(-6, 0, length.out=9)` is stored directly in every
+option JSON and passed unchanged to both solvers.
 
 ### Makefile
 

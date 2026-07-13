@@ -54,12 +54,15 @@ int smoothing_example_main(int argc, char* argv[]) {
     const auto wall_start = std::chrono::steady_clock::now();
     const std::clock_t cpu_start = std::clock();
 
+    // assemble the selected discretization and SRPDE model
     Triangulation<1, 1> domain = Triangulation<1, 1>::UnitInterval(n_nodes);
     GeoFrame data(domain);
     auto& layer = data.insert_scalar_layer<POINT>("observations", locations);
     layer.load_blk("y", response);
 
 #ifdef SMOOTHING_EXAMPLE_SPLINE
+    constexpr const char* discretization = "spline";
+    constexpr int system_blocks = 1;
     BsSpace space(domain, 3);
     TrialFunction f(space);
     TestFunction v(space);
@@ -68,6 +71,8 @@ int smoothing_example_main(int argc, char* argv[]) {
     const auto load = integral(domain)(forcing * v);
     SRPDE model("y ~ f", data, bs_ls_elliptic(penalty, load));
 #else
+    constexpr const char* discretization = "fem";
+    constexpr int system_blocks = 2;
     FeSpace space(domain, P1<1>);
     TrialFunction f(space);
     TestFunction v(space);
@@ -76,25 +81,41 @@ int smoothing_example_main(int argc, char* argv[]) {
     const auto load = integral(domain)(forcing * v);
     SRPDE model("y ~ f", data, fe_ls_elliptic(penalty, load));
 #endif
+    const auto setup_end = std::chrono::steady_clock::now();
 
+    // select lambda by GCV, fit once at the optimum, then evaluate
     GridSearch<1> optimizer;
     optimizer.optimize(model.gcv(gcv_probes, gcv_seed), lambda_grid);
+    const auto gcv_end = std::chrono::steady_clock::now();
     const double lambda = optimizer.optimum()[0];
     model.fit(lambda);
+    const auto fit_end = std::chrono::steady_clock::now();
     const vector_t prediction = internals::point_basis_eval(space, evaluation) * model.f();
+    const auto prediction_end = std::chrono::steady_clock::now();
 
     const double cpu_seconds = static_cast<double>(std::clock() - cpu_start) / CLOCKS_PER_SEC;
     const double wall_seconds =
-      std::chrono::duration<double>(std::chrono::steady_clock::now() - wall_start).count();
+      std::chrono::duration<double>(prediction_end - wall_start).count();
     const double cpu_usage_percent = wall_seconds > 0.0 ? 100.0 * cpu_seconds / wall_seconds : 0.0;
+    const double setup_seconds = std::chrono::duration<double>(setup_end - wall_start).count();
+    const double gcv_seconds = std::chrono::duration<double>(gcv_end - setup_end).count();
+    const double final_fit_seconds = std::chrono::duration<double>(fit_end - gcv_end).count();
+    const double prediction_seconds = std::chrono::duration<double>(prediction_end - fit_end).count();
 
     std::filesystem::create_directories(std::filesystem::path(prediction_file).parent_path());
     write_csv(prediction_file, prediction);
     std::ofstream metrics_output(metrics_file);
     metrics_output << json {
+      {"discretization", discretization},
+      {"n_basis", space.n_dofs()},
+      {"linear_system_dimension", system_blocks * space.n_dofs()},
       {"wall_seconds", wall_seconds},
       {"cpu_seconds", cpu_seconds},
       {"cpu_usage_percent", cpu_usage_percent},
+      {"setup_seconds", setup_seconds},
+      {"gcv_seconds", gcv_seconds},
+      {"final_fit_seconds", final_fit_seconds},
+      {"prediction_seconds", prediction_seconds},
       {"lambda", lambda},
       {"gcv", optimizer.value()}
     }.dump(2) << '\n';

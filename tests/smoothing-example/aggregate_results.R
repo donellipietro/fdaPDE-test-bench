@@ -1,12 +1,22 @@
+# = ========================================================================== =
+# - Test: SRPDE smoothing example - aggregate results
+# - Desc: Loads standard batch evaluations, validates completeness and solver
+#         telemetry, writes summaries, and produces shared comparison plots.
+# - Args:
+#   [1] name_main_test: one family or the grouped "all" target
+# = ========================================================================== =
+
 rm(list = ls())
 graphics.off()
 
+## Load libraries ----
 invisible(suppressMessages(sapply(
   c("jsonlite", "ggplot2", "tidyr", "dplyr", "grid", "gridExtra"),
   require,
   character.only = TRUE
 )))
 
+## Load general and test-specific functions ----
 source("src/utils/cat.R")
 source("src/utils/directories.R")
 source("src/utils/options.R")
@@ -16,14 +26,20 @@ source("tests/smoothing-example/config.R")
 source("tests/smoothing-example/utils/generate_options.R")
 source("tests/smoothing-example/utils/generate_data.R")
 
+## Select the requested test families ----
 args <- commandArgs(trailingOnly = TRUE)
 requested <- if (length(args)) args[1] else name_main_test_default
 families <- if (requested == "all") test_groups$all else requested
-smoke <- tolower(Sys.getenv("SMOKE_TEST", "0")) %in% c("1", "true", "yes", "y")
-spec <- smoothing_experiment_spec(smoke)
-cfg <- load_config()
-all_rows <- list()
+if (any(!families %in% test_groups$all)) stop("unknown smoothing experiment family")
 
+cfg <- load_config()
+aggregate_dir <- file.path(cfg$PATH_RESULTS, test_suite, "aggregate", requested)
+dir.create(aggregate_dir, recursive = TRUE, showWarnings = FALSE)
+
+all_rows <- list()
+expected_rows <- list()
+
+## Shared plot selection: one boxplot page and one line page per metric
 plots_catalog <- list(
   boxplots = TRUE,
   lines = TRUE,
@@ -32,46 +48,78 @@ plots_catalog <- list(
   normalized = FALSE
 )
 
+## Load, validate, and plot each one-factor family ----
 for (family in families) {
+  ## Regenerate the option queue using the same configuration as the fit
   path_list <- create_paths(test_suite)
   path_list$queue <- config_path(path_list$queue, family)
   path_list$logs <- config_path(path_list$logs, family)
   mkdir(c(path_list$queue, path_list$logs))
   generate_options(test_suite, family, path_list$queue)
-  loaded <- load_all_quantitiative_results(path_list, family)
 
-  varying_option <- loaded$varying_options[1]
+  ## Read option metadata before the shared loader consumes the queue
+  option_files <- sort(list.files(path_list$queue, pattern = "\\.json$", full.names = TRUE))
+  family_options <- lapply(option_files, fromJSON, simplifyVector = TRUE)
+  varying_option <- family_options[[1]]$test_options$varying_options
+  option_metadata <- do.call(rbind, lapply(family_options, function(options) {
+    data.frame(
+      level = resolve_option_value(varying_option, options),
+      n_locs = options$dimensions$n_locs,
+      n_nodes = options$dimensions$n_nodes,
+      SNR = options$noise$SNR,
+      seed = options$noise$seed,
+      n_reps = options$test_options$n_reps,
+      stringsAsFactors = FALSE
+    )
+  }))
+
+  ## Load all standard batch evaluation files for this family
+  loaded <- load_all_quantitiative_results(path_list, family)
+  if (!identical(loaded$varying_options, varying_option)) {
+    stop("generated and loaded varying options do not match for ", family)
+  }
+
+  ## Recover dimensions directly from the generated option JSON
   base <- loaded$rmse$normalized[, c("Group", varying_option), drop = FALSE]
   level <- base[[varying_option]]
+  metadata_index <- match(as.character(level), as.character(option_metadata$level))
+  if (anyNA(metadata_index)) stop("could not match loaded results to generated options")
+  dimensions <- option_metadata[metadata_index, , drop = FALSE]
   repetition <- ave(seq_along(level), level, FUN = seq_along)
 
-  for (model_name in loaded$model_names) {
-    dimensions <- spec$defaults
-    dimensions[[varying_option]] <- level
-    locations <- lapply(dimensions$n_locs, function(n) seq(0, 1, length.out = n))
-    signal_variance <- vapply(
-      locations,
-      function(x) mean((truth_function(x) - mean(truth_function(x)))^2),
-      numeric(1)
-    )
+  locations <- lapply(dimensions$n_locs, function(n) seq(0, 1, length.out = n))
+  signal_variance <- vapply(
+    locations,
+    function(x) mean((truth_function(x) - mean(truth_function(x)))^2),
+    numeric(1)
+  )
 
+  ## Flatten the shared loaded structure into one row per model fit
+  for (model_name in loaded$model_names) {
     all_rows[[paste(family, model_name)]] <- data.frame(
       family = family,
       level = level,
       repetition = repetition,
-      seed = spec$seed_base + repetition,
-      smoke_test = smoke,
+      seed = dimensions$seed + repetition,
+      smoke_test = SMOKE_TEST,
       n_locs = dimensions$n_locs,
       n_nodes = dimensions$n_nodes,
-      snr = dimensions$snr,
+      snr = dimensions$SNR,
       signal_variance = signal_variance,
-      noise_sigma = sqrt(signal_variance / dimensions$snr),
+      noise_sigma = sqrt(signal_variance / dimensions$SNR),
       discretization = model_name,
       source_ref = if (model_name == "fem") cfg$FDAPDE_CPP_FEM_REF else cfg$FDAPDE_CPP_SPLINE_REF,
+      n_basis = loaded$n_basis[[model_name]],
+      linear_system_dimension = loaded$linear_system_dimension[[model_name]],
       wall_seconds = loaded$execution_time[[model_name]],
       peak_ram_mib = loaded$peak_ram_mib[[model_name]],
       cpu_seconds = loaded$cpu_seconds[[model_name]],
       cpu_usage_percent = loaded$cpu_usage_percent[[model_name]],
+      setup_seconds = loaded$setup_seconds[[model_name]],
+      gcv_seconds = loaded$gcv_seconds[[model_name]],
+      final_fit_seconds = loaded$final_fit_seconds[[model_name]],
+      solver_seconds = loaded$solver_seconds[[model_name]],
+      prediction_seconds = loaded$prediction_seconds[[model_name]],
       lambda = loaded$lambdas[[model_name]],
       gcv = loaded$gcv[[model_name]],
       normalized_rmse = loaded$rmse$normalized[[model_name]],
@@ -79,6 +127,18 @@ for (family in families) {
     )
   }
 
+  ## Expected cell sizes also come from the generated option JSON
+  expected_rows[[family]] <- do.call(rbind, lapply(seq_len(nrow(option_metadata)), function(i) {
+    data.frame(
+      family = family,
+      level = option_metadata$level[i],
+      discretization = loaded$model_names,
+      expected_repetitions = option_metadata$n_reps[i],
+      stringsAsFactors = FALSE
+    )
+  }))
+
+  ## Create one standalone legend from the same model metadata as the plots
   image_dir <- file.path(cfg$PATH_IMAGES, test_suite, family)
   dir.create(image_dir, recursive = TRUE, showWarnings = FALSE)
   pdf(file.path(image_dir, "legend.pdf"), width = 6, height = 1.5, bg = "white")
@@ -97,10 +157,12 @@ for (family in families) {
   )
   dev.off()
 
+  ## Produce metric PDFs through the shared aggregate plotting utility
   plot_specs <- list(
     normalized_rmse = list(loaded$rmse$normalized, "Normalized RMSE", "Normalized RMSE"),
     peak_ram_mib = list(loaded$peak_ram_mib, "Peak RAM", "Peak RSS [MiB]"),
     wall_seconds = list(loaded$execution_time, "Wall time", "Wall time [seconds]"),
+    solver_seconds = list(loaded$solver_seconds, "Solver time", "GCV + final fit [seconds]"),
     cpu_seconds = list(loaded$cpu_seconds, "CPU time", "CPU time [seconds]")
   )
   for (plot_name in names(plot_specs)) {
@@ -119,49 +181,61 @@ for (family in families) {
     dev.off()
   }
 
-  aggregate_dir <- file.path(cfg$PATH_RESULTS, test_suite, "aggregate", requested)
-  dir.create(aggregate_dir, recursive = TRUE, showWarnings = FALSE)
   saveRDS(loaded, file.path(aggregate_dir, paste0("loaded_", family, ".rds")))
 }
 
+## Validate flattened telemetry ----
 results <- do.call(rbind, all_rows)
 row.names(results) <- NULL
 numeric_metrics <- c(
-  "wall_seconds", "peak_ram_mib", "cpu_seconds", "cpu_usage_percent",
-  "lambda", "gcv", "normalized_rmse"
+  "n_basis", "linear_system_dimension", "wall_seconds", "peak_ram_mib",
+  "cpu_seconds", "cpu_usage_percent", "setup_seconds", "gcv_seconds",
+  "final_fit_seconds", "solver_seconds", "prediction_seconds", "lambda", "gcv", "normalized_rmse"
 )
 if (any(!is.finite(as.matrix(results[numeric_metrics])))) stop("non-finite smoothing telemetry")
 
-expected <- do.call(rbind, lapply(families, function(family) {
-  expand.grid(
-    family = family,
-    level = spec$grids[[family]],
-    discretization = c("fem", "spline"),
-    stringsAsFactors = FALSE
-  )
-}))
+## Confirm that reported solver dimensions match each implementation
+if (any(results$linear_system_dimension[results$discretization == "fem"] !=
+        2 * results$n_basis[results$discretization == "fem"])) {
+  stop("FEM driver did not report the expected coupled system dimension")
+}
+if (any(results$linear_system_dimension[results$discretization == "spline"] !=
+        results$n_basis[results$discretization == "spline"])) {
+  stop("spline driver did not report the expected direct system dimension")
+}
+
+phase_sum <- rowSums(results[c(
+  "setup_seconds", "gcv_seconds", "final_fit_seconds", "prediction_seconds"
+)])
+if (any(abs(results$wall_seconds - phase_sum) > 1e-9)) stop("phase timings do not sum to wall time")
+
+## Validate the expected repetition count in every cell ----
+expected <- do.call(rbind, expected_rows)
 counts <- aggregate(repetition ~ family + level + discretization, results, function(x) length(unique(x)))
 names(counts)[4] <- "completed_repetitions"
 completeness <- merge(expected, counts, all.x = TRUE)
 completeness$completed_repetitions[is.na(completeness$completed_repetitions)] <- 0L
-completeness$expected_repetitions <- spec$repetitions
 completeness$complete <- completeness$completed_repetitions == completeness$expected_repetitions
 if (any(!completeness$complete)) stop("incomplete smoothing experiment")
 
+## Write readable per-cell summaries ----
 split_results <- split(results, interaction(results$family, results$level, results$discretization, drop = TRUE))
 summary <- do.call(rbind, lapply(split_results, function(x) {
   data.frame(
     family = x$family[1], level = x$level[1], n_locs = x$n_locs[1],
     n_nodes = x$n_nodes[1], snr = x$snr[1], discretization = x$discretization[1],
-    repetitions = nrow(x),
+    repetitions = nrow(x), n_basis = x$n_basis[1],
+    linear_system_dimension = x$linear_system_dimension[1],
     normalized_rmse_mean = mean(x$normalized_rmse), normalized_rmse_sd = sd(x$normalized_rmse),
     peak_ram_mib_mean = mean(x$peak_ram_mib), peak_ram_mib_sd = sd(x$peak_ram_mib),
-    wall_seconds_mean = mean(x$wall_seconds), cpu_seconds_mean = mean(x$cpu_seconds),
+    wall_seconds_mean = mean(x$wall_seconds), setup_seconds_mean = mean(x$setup_seconds),
+    gcv_seconds_mean = mean(x$gcv_seconds), final_fit_seconds_mean = mean(x$final_fit_seconds),
+    solver_seconds_mean = mean(x$solver_seconds), prediction_seconds_mean = mean(x$prediction_seconds),
+    cpu_seconds_mean = mean(x$cpu_seconds),
     stringsAsFactors = FALSE
   )
 }))
 
-aggregate_dir <- file.path(cfg$PATH_RESULTS, test_suite, "aggregate", requested)
 write.csv(results, file.path(aggregate_dir, "all_metrics.csv"), row.names = FALSE)
 write.csv(summary, file.path(aggregate_dir, "summary.csv"), row.names = FALSE)
 write.csv(completeness, file.path(aggregate_dir, "completeness.csv"), row.names = FALSE)

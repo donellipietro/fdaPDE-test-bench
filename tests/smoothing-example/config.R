@@ -1,25 +1,30 @@
+## Global variables ----
+
+## Test suite full name and acronym
+# - TEST_SUITE is for printing only
+# - test_suite is used to create directories (no spaces, please)
 TEST_SUITE <- "SRPDE smoothing example"
 test_suite <- "smoothing-example"
+
+## Tests included in the grouped "all" target
 test_groups <- list(all = c("vary_n_locs", "vary_n_nodes", "vary_snr"))
-name_main_test_default <- "all"
+
+## Force fit/evaluation even if saved results are available
 FORCE_FIT <- FALSE
 FORCE_EVALUATE <- FALSE
-IGNORE_CPP_OUTPUT <- TRUE
-RUN <- list(tests = TRUE, analysis = TRUE, quantitative_analysis = TRUE)
-order <- 1L
 
-smoothing_experiment_spec <- function(smoke = FALSE) {
-  list(
-    repetitions = if (smoke) 2L else 30L,
-    defaults = list(n_locs = 120L, n_nodes = 81L, snr = 10),
-    grids = list(
-      vary_n_locs = if (smoke) 40L else c(40L, 80L, 160L),
-      vary_n_nodes = if (smoke) 21L else c(21L, 41L, 81L),
-      vary_snr = if (smoke) 2 else c(2, 5, 10, 20)
-    ),
-    evaluation_points = 1001L,
-    lambda_exponents = seq(-6, 0, length.out = 9L),
-    gcv_probes = 20L,
-    seed_base = 141200L
-  )
-}
+## Execution flow modifiers
+RUN <- list()
+RUN$tests <- TRUE
+RUN$analysis <- TRUE
+RUN$quantitative_analysis <- TRUE
+SMOKE_TEST <- FALSE
+SMOKE_TEST <- isTRUE(SMOKE_TEST) ||
+  tolower(Sys.getenv("SMOKE_TEST", "false")) %in% c("1", "true", "yes", "y")
+
+## C++ output
+IGNORE_CPP_OUTPUT <- TRUE
+
+## Defaults
+name_main_test_default <- "all"
+order <- 1L # Boxplot grouping | Rows | Cols
