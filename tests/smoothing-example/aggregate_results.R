@@ -102,7 +102,7 @@ for (family in families) {
       signal_variance = loaded$signal_variance[[model_name]],
       noise_sigma = loaded$noise_sigma[[model_name]],
       discretization = model_name,
-      source_ref = if (model_name == "SRPDE-FEM") cfg$FDAPDE_CPP_FEM_REF else cfg$FDAPDE_CPP_SPLINE_REF,
+      source_ref = cfg$FDAPDE_CPP_BRANCH,
       n_basis = loaded$n_basis[[model_name]],
       linear_system_dimension = loaded$linear_system_dimension[[model_name]],
       wall_seconds = loaded$execution_time[[model_name]],

@@ -54,11 +54,6 @@ set -a
 source "${PROJECT_DIR}/.env"
 set +a
 
-if [[ -n "${FDAPDE_CPP_OVERRIDE:-}" ]]; then
-  PATH_FDAPDE_CPP="${FDAPDE_CPP_OVERRIDE}"
-  PATH_FDAPDE_CORE="${FDAPDE_CPP_OVERRIDE}/fdaPDE/core"
-fi
-
 path_required() {
   local name="$1"
   local value="${!name:-}"
@@ -67,6 +62,23 @@ path_required() {
     echo "Error: ${name} is not set. Check config.R and rebuild .env." >&2
     exit 1
   fi
+}
+
+prepare_fdapde() {
+  if [[ "${FDAPDE_PREPARED:-0}" == "1" ]]; then
+    return
+  fi
+
+  # Refresh the profile-selected local stack once per compile invocation.
+  path_required FDAPDE_CPP_REPOSITORY
+  path_required FDAPDE_CPP_BRANCH
+  path_required PATH_FDAPDE_CPP
+  "${CPP_DIR}/clone_fdapde.sh" \
+    "${FDAPDE_CPP_REPOSITORY}" \
+    "${FDAPDE_CPP_BRANCH}" \
+    "${PATH_FDAPDE_CPP}"
+  PATH_FDAPDE_CORE="${PATH_FDAPDE_CPP}/fdaPDE/core"
+  FDAPDE_PREPARED=1
 }
 
 list_models() {
@@ -327,6 +339,8 @@ compile_model() {
   local mains selected_mains src
   local compile_job_limit compile_status pid
   local compile_pids
+
+  prepare_fdapde
 
   if [[ ! -d "${model_dir}" ]]; then
     echo "Error: model directory not found: ${model_dir}" >&2

@@ -16,6 +16,7 @@
 /build
 /tmp
 /.fdapde-cpp
+/fdaPDE-cpp
 /cpp/ipopt.opt
 /cpp/*/fit_model*
 /.idea/

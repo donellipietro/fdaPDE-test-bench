@@ -13,8 +13,11 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_REPO <- normalizePath(".", mustWork = FALSE)
     PATH_OUTPUT <- Sys.getenv("TESTBENCH_OUTPUT", unset = PATH_REPO)
     PATH_TMP <- file.path(PATH_OUTPUT, "tmp")
-    PATH_FDAPDE_CPP <- Sys.getenv("PATH_FDAPDE_CPP", unset = "")
-    PATH_FDAPDE_CLONES <- file.path(PATH_REPO, ".fdapde-cpp")
+    PATH_FDAPDE_CPP <- file.path(PATH_REPO, "fdaPDE-cpp")
+    FDAPDE_CPP_REPOSITORY <- Sys.getenv(
+      "FDAPDE_CPP_REPOSITORY",
+      unset = file.path(dirname(PATH_REPO), "fdaPDE-cpp")
+    )
 
     list(
       PATH_REPO = PATH_REPO,
@@ -38,12 +41,9 @@ TESTBENCH_CONFIG_PROFILES <- list(
         ""
       },
       PATH_EIGEN_INCLUDE = Sys.getenv("PATH_EIGEN_INCLUDE", unset = ""),
-      FDAPDE_CPP_REPOSITORY = Sys.getenv("FDAPDE_CPP_REPOSITORY", unset = ""),
-      FDAPDE_CPP_FEM_REF = Sys.getenv("FDAPDE_CPP_FEM_REF", unset = "stable"),
-      FDAPDE_CPP_SPLINE_REF = Sys.getenv("FDAPDE_CPP_SPLINE_REF", unset = "develop-Splines"),
-      PATH_FDAPDE_CLONES = PATH_FDAPDE_CLONES,
-      PATH_FDAPDE_CPP_FEM = file.path(PATH_FDAPDE_CLONES, "fem"),
-      PATH_FDAPDE_CPP_SPLINE = file.path(PATH_FDAPDE_CLONES, "spline"),
+      FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
+      # Outer branch selected by this profile for the local fdaPDE stack
+      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop-Splines"),
 
       SINGULARITY_IMAGE = "",
       SINGULARITY_BIND_PATHS = PATH_REPO,
@@ -61,9 +61,14 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_REPO <- normalizePath(".", mustWork = FALSE)
     PATH_OUTPUT <- Sys.getenv("TESTBENCH_OUTPUT", unset = PATH_REPO)
     PATH_TMP <- file.path(PATH_OUTPUT, "tmp")
-    PATH_FDAPDE_CPP <- Sys.getenv("PATH_FDAPDE_CPP", unset = "")
-    PATH_FDAPDE_CLONES <- file.path(PATH_REPO, ".fdapde-cpp")
-    SINGULARITY_BIND_PATHS <- unique(c(PATH_REPO, PATH_OUTPUT, PATH_FDAPDE_CPP, PATH_FDAPDE_CLONES))
+    PATH_FDAPDE_CPP <- file.path(PATH_REPO, "fdaPDE-cpp")
+    FDAPDE_CPP_REPOSITORY <- Sys.getenv(
+      "FDAPDE_CPP_REPOSITORY",
+      unset = file.path(dirname(PATH_REPO), "fdaPDE-cpp")
+    )
+    SINGULARITY_BIND_PATHS <- unique(c(
+      PATH_REPO, PATH_OUTPUT, PATH_FDAPDE_CPP, FDAPDE_CPP_REPOSITORY
+    ))
     SINGULARITY_BIND_PATHS <- SINGULARITY_BIND_PATHS[nzchar(SINGULARITY_BIND_PATHS)]
 
     list(
@@ -88,12 +93,9 @@ TESTBENCH_CONFIG_PROFILES <- list(
         ""
       },
       PATH_EIGEN_INCLUDE = Sys.getenv("PATH_EIGEN_INCLUDE", unset = ""),
-      FDAPDE_CPP_REPOSITORY = Sys.getenv("FDAPDE_CPP_REPOSITORY", unset = ""),
-      FDAPDE_CPP_FEM_REF = Sys.getenv("FDAPDE_CPP_FEM_REF", unset = "stable"),
-      FDAPDE_CPP_SPLINE_REF = Sys.getenv("FDAPDE_CPP_SPLINE_REF", unset = "develop-Splines"),
-      PATH_FDAPDE_CLONES = PATH_FDAPDE_CLONES,
-      PATH_FDAPDE_CPP_FEM = file.path(PATH_FDAPDE_CLONES, "fem"),
-      PATH_FDAPDE_CPP_SPLINE = file.path(PATH_FDAPDE_CLONES, "spline"),
+      FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
+      # Outer branch selected by this profile for the local fdaPDE stack
+      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop-Splines"),
 
       SINGULARITY_IMAGE = Sys.getenv("SINGULARITY_IMAGE", unset = ""),
       SINGULARITY_BIND_PATHS = paste(SINGULARITY_BIND_PATHS, collapse = ","),

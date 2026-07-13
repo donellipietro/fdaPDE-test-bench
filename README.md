@@ -30,32 +30,33 @@ To run tests using the provided utilities, follow these steps:
    make write_env create_dirs PROFILE=macbook
    ```
 
-   For the smoothing example, export the local fdaPDE-cpp source, its two refs,
-   and the compiler settings before writing the standard environment:
+   For the smoothing example, export the local fdaPDE-cpp source, the selected
+   outer branch, and the compiler settings before writing the environment:
 
    ```bash
    export FDAPDE_CPP_REPOSITORY=/path/to/fdaPDE-cpp
-   export FDAPDE_CPP_FEM_REF=stable
-   export FDAPDE_CPP_SPLINE_REF=develop-Splines
+   export FDAPDE_CPP_BRANCH=develop-Splines
    export PATH_EIGEN_INCLUDE=/opt/homebrew/opt/eigen/include/eigen3
    export CC=/opt/homebrew/bin/gcc-15
    export CXX=/opt/homebrew/bin/g++-15
    make write_env create_dirs PROFILE=macbook
    ```
 
-   The exact configuration keys are `FDAPDE_CPP_REPOSITORY`,
-   `FDAPDE_CPP_FEM_REF`, and `FDAPDE_CPP_SPLINE_REF`. Clones are created at
-   `.fdapde-cpp/fem` and `.fdapde-cpp/spline`; both paths are ignored. Prepare
-   each ref, then compile through the standard `compile` target:
+   The outer branch always comes from the active profile's
+   `FDAPDE_CPP_BRANCH` key. The standard compile target creates or refreshes the
+   ignored repository-local `fdaPDE-cpp` clone from `FDAPDE_CPP_REPOSITORY`,
+   then initializes `fdaPDE/core` at the selected branch's recorded gitlink.
+   Compile both drivers against that stack:
 
    ```bash
-   ./cpp/clone_fdapde.sh "$FDAPDE_CPP_REPOSITORY" "$FDAPDE_CPP_FEM_REF" .fdapde-cpp/fem
-   ./cpp/clone_fdapde.sh "$FDAPDE_CPP_REPOSITORY" "$FDAPDE_CPP_SPLINE_REF" .fdapde-cpp/spline
-   FDAPDE_CPP_OVERRIDE="$PWD/.fdapde-cpp/fem" \
-     make compile MODEL=smoothing-example TARGET=fit_model_fem
-   FDAPDE_CPP_OVERRIDE="$PWD/.fdapde-cpp/spline" \
-     make compile MODEL=smoothing-example TARGET=fit_model_spline
+   make compile MODEL=smoothing-example TARGET=fit_model_fem
+   make compile MODEL=smoothing-example TARGET=fit_model_spline
    ```
+
+   Accepted outer/core branch mappings are `develop-Splines` or historical
+   `develop_splines` to `develop-splines`, `develop_RGCCA` to `develop-RGCCA`,
+   and `develop_fPLS` to `develop-fPLS`. Bootstrap validates the mapping but
+   always checks out the core commit recorded by the selected outer branch.
 
 3. Run a suite through the strategy declared by the active profile:
 
