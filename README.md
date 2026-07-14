@@ -25,7 +25,9 @@ To run tests using the provided utilities, follow these steps:
 
    `build` installs dependencies and prepares the profile-selected
    repository-local `libraries/fdaPDE-cpp` clone, including its recorded
-   `fdaPDE/core` submodule. It may access remote repositories. On an already
+   `fdaPDE/core` submodule. It also prepares nlohmann/json `v3.12.0` in
+   `libraries/nlohmann-json`. Both destinations are reused, and the pinned JSON
+   checkout can be prepared offline after its initial clone. On an already
    provisioned machine, initialize the profile without reinstalling:
 
    ```bash

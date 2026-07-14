@@ -117,7 +117,7 @@ create_dirs:
 	@echo "Creating necessary directories..."
 	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --create-dirs
 
-## Write .env, create directories, install dependencies, and prepare fdaPDE-cpp
+## Write .env, create directories, install dependencies, and prepare C++ libraries
 build:
 	@if [ -z "$(REQUESTED_PROFILE)" ]; then \
 		echo ""; \
@@ -131,6 +131,9 @@ build:
 		echo ""; \
 	else \
 		$(MAKE) --no-print-directory config install PROFILE="$(TESTBENCH_PROFILE)" && \
+		printf '\nInstalling nlohmann/json...\n' && \
+		./cpp/prepare_json.sh && \
+		printf 'Installation completed.\n\n' && \
 		printf '\nInstalling fdaPDE-cpp...\n' && \
 		./cpp/clone_fdapde.sh "$(FDAPDE_CPP_REPOSITORY)" "$(FDAPDE_CPP_BRANCH)" "$(PATH_FDAPDE_CPP)" && \
 		printf 'Installation completed.\n\n' && \

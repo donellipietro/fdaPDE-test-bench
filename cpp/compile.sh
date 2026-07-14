@@ -44,6 +44,7 @@ USAGE
 
 CPP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${CPP_DIR}/.." && pwd)"
+PATH_NLOHMANN_JSON="${PROJECT_DIR}/libraries/nlohmann-json"
 
 if [[ ! -f "${PROJECT_DIR}/.env" ]]; then
   echo "Error: .env not found. Run: make build TESTBENCH_PROFILE=<profile>" >&2
@@ -79,6 +80,15 @@ prepare_fdapde() {
     "${PATH_FDAPDE_CPP}"
   PATH_FDAPDE_CORE="${PATH_FDAPDE_CPP}/fdaPDE/core"
   FDAPDE_PREPARED=1
+}
+
+prepare_json() {
+  if [[ "${JSON_PREPARED:-0}" == "1" ]]; then
+    return
+  fi
+
+  "${CPP_DIR}/prepare_json.sh" "${PATH_NLOHMANN_JSON}"
+  JSON_PREPARED=1
 }
 
 list_models() {
@@ -142,6 +152,7 @@ compile_flags() {
   local flag
 
   include_flags=()
+  include_flags+=("-I${PATH_NLOHMANN_JSON}/include")
   [[ -n "${PATH_FDAPDE_CPP:-}" ]] && include_flags+=("-I${PATH_FDAPDE_CPP}")
   [[ -n "${PATH_FDAPDE_CORE:-}" ]] && include_flags+=("-I${PATH_FDAPDE_CORE}")
   [[ -n "${PATH_IPOPT_INCLUDE:-}" ]] && include_flags+=("-I${PATH_IPOPT_INCLUDE}")
@@ -272,7 +283,8 @@ headers_newer_than() {
   local out="$1"
   local newer root
 
-  for root in "${PATH_CPP}" "${PATH_FDAPDE_CPP:-}/fdaPDE"; do
+  for root in "${PATH_CPP}" "${PATH_FDAPDE_CPP:-}/fdaPDE" \
+    "${PATH_NLOHMANN_JSON}/include"; do
     [[ -d "${root}" ]] || continue
     newer="$(find "${root}" -type f \( -name '*.h' -o -name '*.hpp' \) -newer "${out}" -print -quit)"
     [[ -z "${newer}" ]] || return 0
@@ -340,6 +352,7 @@ compile_model() {
   local compile_job_limit compile_status pid
   local compile_pids
 
+  prepare_json
   prepare_fdapde
 
   if [[ ! -d "${model_dir}" ]]; then
