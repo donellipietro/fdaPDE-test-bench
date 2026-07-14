@@ -53,6 +53,8 @@ PATH_TMP_DATA := $(call config_value,PATH_TMP_DATA)
 PATH_TMP_RESULTS := $(call config_value,PATH_TMP_RESULTS)
 PATH_BUILD := $(call config_value,PATH_BUILD)
 PATH_FDAPDE_CPP := $(call config_value,PATH_FDAPDE_CPP)
+FDAPDE_CPP_REPOSITORY := $(call config_value,FDAPDE_CPP_REPOSITORY)
+FDAPDE_CPP_BRANCH := $(call config_value,FDAPDE_CPP_BRANCH)
 TEST_EXECUTION_STRATEGY := $(call config_value,TEST_EXECUTION_STRATEGY)
 COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
 
@@ -115,7 +117,7 @@ create_dirs:
 	@echo "Creating necessary directories..."
 	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --create-dirs
 
-## Write .env, create directories, and install dependencies
+## Write .env, create directories, install dependencies, and prepare fdaPDE-cpp
 build:
 	@if [ -z "$(REQUESTED_PROFILE)" ]; then \
 		echo ""; \
@@ -129,6 +131,7 @@ build:
 		echo ""; \
 	else \
 		$(MAKE) --no-print-directory config install PROFILE="$(TESTBENCH_PROFILE)" && \
+		./cpp/clone_fdapde.sh "$(FDAPDE_CPP_REPOSITORY)" "$(FDAPDE_CPP_BRANCH)" "$(PATH_FDAPDE_CPP)" && \
 		printf 'Profile %s build completed.\n\n' "$(TESTBENCH_PROFILE)"; \
 	fi
 

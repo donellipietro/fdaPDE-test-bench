@@ -23,8 +23,10 @@ To run tests using the provided utilities, follow these steps:
    make build PROFILE=macbook
    ```
 
-   `build` installs dependencies and may access remote repositories. On an
-   already provisioned machine, initialize the profile without reinstalling:
+   `build` installs dependencies and prepares the profile-selected
+   repository-local `fdaPDE-cpp` clone, including its recorded `fdaPDE/core`
+   submodule. It may access remote repositories. On an already provisioned
+   machine, initialize the profile without reinstalling:
 
    ```bash
    make write_env create_dirs PROFILE=macbook
@@ -43,10 +45,10 @@ To run tests using the provided utilities, follow these steps:
    ```
 
    The outer branch always comes from the active profile's
-   `FDAPDE_CPP_BRANCH` key. The standard compile target creates or refreshes the
-   ignored repository-local `fdaPDE-cpp` clone from the configured remote
-   `FDAPDE_CPP_REPOSITORY`,
-   then initializes `fdaPDE/core` at the selected branch's recorded gitlink.
+   `FDAPDE_CPP_BRANCH` key. The standard build and compile targets create or
+   refresh the ignored repository-local `fdaPDE-cpp` clone from the configured
+   remote `FDAPDE_CPP_REPOSITORY`, then initialize `fdaPDE/core` at the
+   selected branch's recorded gitlink.
    Compile both drivers against that stack:
 
    ```bash
