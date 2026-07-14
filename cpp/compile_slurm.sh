@@ -9,7 +9,7 @@ Usage:
   ./cpp/compile_slurm.sh --make-help
 
 Options:
-  --parsable              Print only the submitted job id.
+  --parsable              Submit asynchronously and print only the job id.
   --dependency JOBID      Add an afterok dependency.
   -h, --help              Show this help.
 
@@ -223,6 +223,10 @@ SBATCH_ARGS=(
   --mem="${MEM}"
   --cpus-per-task="${CPUS}"
 )
+
+if [[ "${PARSABLE}" -eq 0 ]]; then
+  SBATCH_ARGS+=(--wait)
+fi
 
 if [[ -n "${DEPENDENCY}" ]]; then
   SBATCH_ARGS+=(--dependency="afterok:${DEPENDENCY}")

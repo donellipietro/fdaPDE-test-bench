@@ -128,8 +128,10 @@ fdaPDE_model <- function(model_name, domain, data, path_list, test_options) {
   )
   
   # Run C++ executable ----
+  runner <- file.path(path_list$repo, "cpp", "run.sh")
   command <- glue::glue(
-    "cd {shQuote(path_cpp_script)} && ./fit_model {shQuote(file_name_params)}"
+    "{shQuote(runner)} --quiet --workdir {shQuote(path_cpp_script)} -- ",
+    "./fit_model {shQuote(file_name_params)}"
   )
   run_stats <- system_with_memory(
     command,

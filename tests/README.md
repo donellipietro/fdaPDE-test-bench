@@ -13,6 +13,35 @@ test suite as its model directory.
 `make run_test` uses the active profile from `config.R`: `serial`, `parallel`,
 or `slurm`.
 
+## HPC/Slurm Review Run
+
+From a fresh clone, load Apptainer or SingularityCE plus host R and Slurm, then
+run:
+
+```bash
+make build PROFILE=hpc-slurm
+SMOKE_TEST=1 make run_test PROFILE=hpc-slurm TEST_SUITE=smoothing-example TEST_NAME=all
+```
+
+The build creates ignored dependencies under `libraries/`, including
+`fdapde-docker-latest.sif`, `fdaPDE-cpp`, `nlohmann-json`, and, when
+`R_LIBS_USER` is unset, `R`. The SIF supplies the C++ compiler, Eigen, and
+Ipopt; `cpp/run.sh` also executes each fitted C++ binary in that image.
+R configuration, test orchestration, aggregation, plotting, and `sbatch`
+remain host operations.
+
+The local SIF is reused and is never refreshed silently. Remove it to pull the
+configured source again, or override `SINGULARITY_IMAGE_SOURCE` with an
+immutable digest URI. If `apptainer` and `singularity` are both missing, load
+the site module. If registry access is unavailable, copy a prepared SIF to the
+configured path before building. A fully offline build also requires the JSON
+and fdaPDE clones and R library to be pre-staged under `libraries/`. For a
+submission-only check, use:
+
+```bash
+SLURM_DRY_RUN=1 make run_test PROFILE=hpc-slurm TEST_SUITE=smoothing-example TEST_NAME=all
+```
+
 ## Suite Layout
 
 ```text

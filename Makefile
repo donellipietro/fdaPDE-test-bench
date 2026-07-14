@@ -55,6 +55,8 @@ PATH_BUILD := $(call config_value,PATH_BUILD)
 PATH_FDAPDE_CPP := $(call config_value,PATH_FDAPDE_CPP)
 FDAPDE_CPP_REPOSITORY := $(call config_value,FDAPDE_CPP_REPOSITORY)
 FDAPDE_CPP_BRANCH := $(call config_value,FDAPDE_CPP_BRANCH)
+SINGULARITY_IMAGE := $(call config_value,SINGULARITY_IMAGE)
+SINGULARITY_IMAGE_SOURCE := $(call config_value,SINGULARITY_IMAGE_SOURCE)
 TEST_EXECUTION_STRATEGY := $(call config_value,TEST_EXECUTION_STRATEGY)
 COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
 
@@ -130,7 +132,13 @@ build:
 		$(RSCRIPT) -e 'source("config.R"); cat(paste0("  - ", available_profiles(), collapse = "\n"), "\n", sep = "")'; \
 		echo ""; \
 	else \
-		$(MAKE) --no-print-directory config install PROFILE="$(TESTBENCH_PROFILE)" && \
+		$(MAKE) --no-print-directory config PROFILE="$(TESTBENCH_PROFILE)" && \
+		if [ -n "$(SINGULARITY_IMAGE)" ]; then \
+			printf '\nInstalling container image...\n' && \
+			./cpp/prepare_image.sh "$(SINGULARITY_IMAGE_SOURCE)" "$(SINGULARITY_IMAGE)" && \
+			printf 'Installation completed.\n\n'; \
+		fi && \
+		$(MAKE) --no-print-directory install PROFILE="$(TESTBENCH_PROFILE)" && \
 		printf '\nInstalling nlohmann/json...\n' && \
 		./cpp/prepare_json.sh && \
 		printf 'Installation completed.\n\n' && \

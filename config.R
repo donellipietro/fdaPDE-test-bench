@@ -70,6 +70,10 @@ TESTBENCH_CONFIG_PROFILES <- list(
       "FDAPDE_CPP_REPOSITORY",
       unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
     )
+    SINGULARITY_IMAGE <- Sys.getenv(
+      "SINGULARITY_IMAGE",
+      unset = file.path(PATH_REPO, "libraries", "fdapde-docker-latest.sif")
+    )
     SINGULARITY_BIND_PATHS <- unique(c(PATH_REPO, PATH_OUTPUT, PATH_FDAPDE_CPP))
     SINGULARITY_BIND_PATHS <- SINGULARITY_BIND_PATHS[nzchar(SINGULARITY_BIND_PATHS)]
 
@@ -94,12 +98,19 @@ TESTBENCH_CONFIG_PROFILES <- list(
       } else {
         ""
       },
-      PATH_EIGEN_INCLUDE = Sys.getenv("PATH_EIGEN_INCLUDE", unset = ""),
+      PATH_EIGEN_INCLUDE = Sys.getenv(
+        "PATH_EIGEN_INCLUDE",
+        unset = "/usr/include/eigen3"
+      ),
       FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
       # Outer branch selected by this profile for the local fdaPDE stack
       FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop-Splines"),
 
-      SINGULARITY_IMAGE = Sys.getenv("SINGULARITY_IMAGE", unset = ""),
+      SINGULARITY_IMAGE = SINGULARITY_IMAGE,
+      SINGULARITY_IMAGE_SOURCE = Sys.getenv(
+        "SINGULARITY_IMAGE_SOURCE",
+        unset = "docker://aldoclemente/fdapde-docker:latest"
+      ),
       SINGULARITY_BIND_PATHS = paste(SINGULARITY_BIND_PATHS, collapse = ","),
       TEST_EXECUTION_STRATEGY = "slurm",
       COMPILE_STRATEGY = "slurm",
@@ -110,7 +121,10 @@ TESTBENCH_CONFIG_PROFILES <- list(
       MULTITHREAD_MEM = Sys.getenv("MULTITHREAD_MEM", unset = "32GB"),
       MULTITHREAD_TIME = Sys.getenv("MULTITHREAD_TIME", unset = "12:00:00"),
       R_CRAN_REPO = "https://cloud.r-project.org",
-      R_LIBS_USER = Sys.getenv("R_LIBS_USER", unset = ""),
+      R_LIBS_USER = Sys.getenv(
+        "R_LIBS_USER",
+        unset = file.path(PATH_REPO, "libraries", "R")
+      ),
       R_LIBS_SITE = Sys.getenv("R_LIBS_SITE", unset = "")
     )
   })
