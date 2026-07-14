@@ -232,6 +232,7 @@ distclean: clean clean_compiled
 	@$(RM) -r "$(PATH_IMAGES)"
 	@$(RM) -r "$(PATH_RESULTS)"
 	@$(RM) -r "$(PATH_TEST_DATA)"
+	@$(RM) -r "$(PATH_TMP)"
 	@if [ -n "$(PATH_REPO)" ]; then $(RM) -r "$(PATH_REPO)/libraries"; fi
 	@$(RM) .env
 	@printf 'Additional cleanup completed.\n\n'
