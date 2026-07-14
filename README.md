@@ -60,6 +60,8 @@ To run tests using the provided utilities, follow these steps:
    `develop_splines` to `develop-splines`, `develop_RGCCA` to `develop-RGCCA`,
    and `develop_fPLS` to `develop-fPLS`. Bootstrap validates the mapping but
    always checks out the core commit recorded by the selected outer branch.
+   The generated outer and core repositories remain attached to their mapped
+   local branches and track the corresponding `origin` branches.
 
 3. Run a suite through the strategy declared by the active profile:
 

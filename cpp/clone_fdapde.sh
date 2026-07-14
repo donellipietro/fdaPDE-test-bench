@@ -39,9 +39,13 @@ else
   git -C "${destination}" remote set-url origin "${repository}"
 fi
 
-git -C "${destination}" fetch --quiet origin "refs/heads/${outer_branch}"
-outer_commit="$(git -C "${destination}" rev-parse FETCH_HEAD)"
-git -C "${destination}" checkout --quiet --detach "${outer_commit}"
+outer_remote_ref="refs/remotes/origin/${outer_branch}"
+git -C "${destination}" fetch --quiet origin \
+  "+refs/heads/${outer_branch}:${outer_remote_ref}"
+outer_commit="$(git -C "${destination}" rev-parse "${outer_remote_ref}")"
+git -C "${destination}" checkout --quiet -B "${outer_branch}" "${outer_remote_ref}"
+git -C "${destination}" branch --quiet \
+  --set-upstream-to="origin/${outer_branch}" "${outer_branch}"
 core_commit="$(git -C "${destination}" ls-tree "${outer_commit}" fdaPDE/core | awk '{print $3}')"
 if [[ -z "${core_commit}" ]]; then
   echo "Error: ${outer_branch} does not record the fdaPDE/core submodule" >&2
@@ -53,13 +57,19 @@ git -C "${destination}" submodule sync -- fdaPDE/core
 git -C "${destination}" submodule update --init --checkout fdaPDE/core
 
 core_dir="${destination}/fdaPDE/core"
-git -C "${core_dir}" fetch --quiet origin "refs/heads/${core_branch}"
-mapped_core_commit="$(git -C "${core_dir}" rev-parse FETCH_HEAD)"
-checked_out_core="$(git -C "${core_dir}" rev-parse HEAD)"
+core_remote_ref="refs/remotes/origin/${core_branch}"
+git -C "${core_dir}" fetch --quiet origin \
+  "+refs/heads/${core_branch}:${core_remote_ref}"
+mapped_core_commit="$(git -C "${core_dir}" rev-parse "${core_remote_ref}")"
 if [[ "${mapped_core_commit}" != "${core_commit}" ]]; then
   echo "Error: ${outer_branch} records core ${core_commit}, but ${core_branch} is ${mapped_core_commit}" >&2
   exit 1
 fi
+
+git -C "${core_dir}" checkout --quiet -B "${core_branch}" "${core_remote_ref}"
+git -C "${core_dir}" branch --quiet \
+  --set-upstream-to="origin/${core_branch}" "${core_branch}"
+checked_out_core="$(git -C "${core_dir}" rev-parse HEAD)"
 if [[ "${checked_out_core}" != "${core_commit}" ]]; then
   echo "Error: expected core ${core_commit}, checked out ${checked_out_core}" >&2
   exit 1
