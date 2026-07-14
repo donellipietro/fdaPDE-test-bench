@@ -249,7 +249,11 @@ if is_truthy "${SLURM_DRY_RUN:-0}"; then
   exit 0
 fi
 
-JOB_ID="$(sbatch "${SBATCH_ARGS[@]}")"
+if ! JOB_ID="$(sbatch "${SBATCH_ARGS[@]}")"; then
+  echo "Error: Slurm compile job ${JOB_ID:-unknown} failed." >&2
+  echo "Logs: ${LOG_DIR}" >&2
+  exit 1
+fi
 if [[ "${PARSABLE}" -eq 1 ]]; then
   printf '%s\n' "${JOB_ID}"
 else

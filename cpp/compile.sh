@@ -146,8 +146,6 @@ ensure_ipopt_options() {
 }
 
 compile_flags() {
-  local eigen_compat_header="${PATH_CPP}/include/eigen_compat.h"
-  local eigen_compat_flags=()
   local configured_flags
   local flag
 
@@ -171,21 +169,6 @@ compile_flags() {
     )
   fi
 
-  # Temporary workaround for the Eigen version in the current Singularity image.
-  # Remove this block and cpp/include/eigen_compat.h once the image exposes Eigen::all.
-  if [[ -n "${SINGULARITY_IMAGE:-}" ]]; then
-    if [[ ! -f "${eigen_compat_header}" ]]; then
-      echo "Error: Eigen compatibility header not found: ${eigen_compat_header}" >&2
-      exit 1
-    fi
-
-    eigen_compat_flags=(
-      -DEIGEN_COMPAT_FORCE_PLACEHOLDER_ALL
-      -include
-      "${eigen_compat_header}"
-    )
-  fi
-
   cxx_flags=()
   for flag in "${configured_flags[@]}"; do
     cxx_flags+=("${flag}")
@@ -195,12 +178,6 @@ compile_flags() {
       cxx_flags+=("${flag}")
     done
   fi
-  if [[ "${#eigen_compat_flags[@]}" -gt 0 ]]; then
-    for flag in "${eigen_compat_flags[@]}"; do
-      cxx_flags+=("${flag}")
-    done
-  fi
-
   if [[ -n "${LDFLAGS:-}" ]]; then
     split_flags "${LDFLAGS}"
     ld_flags=("${SPLIT_FLAGS_RESULT[@]}")
