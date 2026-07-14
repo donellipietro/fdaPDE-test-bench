@@ -32,15 +32,18 @@ TESTBENCH_CONFIG_PROFILES <- list(
       PATH_TMP_RESULTS = file.path(PATH_TMP, "results"),
       PATH_BUILD = file.path(PATH_OUTPUT, "build"),
 
-      CC = Sys.getenv("CC", unset = "gcc"),
-      CXX = Sys.getenv("CXX", unset = "g++"),
+      CC = Sys.getenv("CC", unset = "/opt/homebrew/bin/gcc-15"),
+      CXX = Sys.getenv("CXX", unset = "/opt/homebrew/bin/g++-15"),
       PATH_FDAPDE_CPP = PATH_FDAPDE_CPP,
       PATH_FDAPDE_CORE = if (nzchar(PATH_FDAPDE_CPP)) {
         file.path(PATH_FDAPDE_CPP, "fdaPDE/core")
       } else {
         ""
       },
-      PATH_EIGEN_INCLUDE = Sys.getenv("PATH_EIGEN_INCLUDE", unset = ""),
+      PATH_EIGEN_INCLUDE = Sys.getenv(
+        "PATH_EIGEN_INCLUDE",
+        unset = "/opt/homebrew/opt/eigen/include/eigen3"
+      ),
       FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
       # Outer branch selected by this profile for the local fdaPDE stack
       FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop-Splines"),

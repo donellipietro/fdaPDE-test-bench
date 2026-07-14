@@ -32,17 +32,11 @@ To run tests using the provided utilities, follow these steps:
    make write_env create_dirs PROFILE=macbook
    ```
 
-   For the smoothing example, select the outer branch and compiler settings
-   before writing the environment:
-
-   ```bash
-   export FDAPDE_CPP_REPOSITORY=https://github.com/fdaPDE/fdaPDE-cpp.git
-   export FDAPDE_CPP_BRANCH=develop-Splines
-   export PATH_EIGEN_INCLUDE=/opt/homebrew/opt/eigen/include/eigen3
-   export CC=/opt/homebrew/bin/gcc-15
-   export CXX=/opt/homebrew/bin/g++-15
-   make write_env create_dirs PROFILE=macbook
-   ```
+   For the smoothing example, the `macbook` profile defaults to the
+   `develop-Splines` outer branch, Homebrew GCC 15, and Eigen at
+   `/opt/homebrew/opt/eigen/include/eigen3`. The corresponding environment
+   variables remain available when a different branch or installation is
+   required.
 
    The outer branch always comes from the active profile's
    `FDAPDE_CPP_BRANCH` key. The standard build and compile targets create or
