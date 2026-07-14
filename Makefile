@@ -131,7 +131,9 @@ build:
 		echo ""; \
 	else \
 		$(MAKE) --no-print-directory config install PROFILE="$(TESTBENCH_PROFILE)" && \
+		printf '\nInstalling fdaPDE-cpp...\n' && \
 		./cpp/clone_fdapde.sh "$(FDAPDE_CPP_REPOSITORY)" "$(FDAPDE_CPP_BRANCH)" "$(PATH_FDAPDE_CPP)" && \
+		printf 'Installation completed.\n\n' && \
 		printf 'Profile %s build completed.\n\n' "$(TESTBENCH_PROFILE)"; \
 	fi
 
