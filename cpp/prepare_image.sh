@@ -46,12 +46,18 @@ capabilities="$("${runtime}" exec "${destination}" sh -c '
   test -n "${rscript}" || rscript="not found (host R is required)"
   eigen="/usr/include/eigen3"
   test -f "${eigen}/Eigen/Core"
+  eigen_version="$(awk '\''
+    /^#define EIGEN_WORLD_VERSION / { world = $3 }
+    /^#define EIGEN_MAJOR_VERSION / { major = $3 }
+    /^#define EIGEN_MINOR_VERSION / { minor = $3 }
+    END { print world "." major "." minor }
+  '\'' "${eigen}/Eigen/src/Core/util/Macros.h")"
   ipopt_version="$(pkg-config --modversion ipopt)"
   ipopt_include="$(pkg-config --variable=includedir ipopt)"
   ipopt_lib="$(pkg-config --variable=libdir ipopt)"
-  printf "g++=%s\nEigen=%s\nIpopt=%s (%s, %s)\nRscript=%s\n" \
-    "${gxx}" "${eigen}" "${ipopt_version}" "${ipopt_include}" "${ipopt_lib}" \
-    "${rscript}"
+  printf "g++=%s\nEigen=%s (%s)\nIpopt=%s (%s, %s)\nRscript=%s\n" \
+    "${gxx}" "${eigen}" "${eigen_version}" "${ipopt_version}" \
+    "${ipopt_include}" "${ipopt_lib}" "${rscript}"
 ')" || {
   echo "Error: container is missing the expected C++ dependency stack" >&2
   exit 1
