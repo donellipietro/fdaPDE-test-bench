@@ -232,7 +232,7 @@ distclean: clean clean_compiled
 	@$(RM) -r "$(PATH_IMAGES)"
 	@$(RM) -r "$(PATH_RESULTS)"
 	@$(RM) -r "$(PATH_TEST_DATA)"
-	@if [ -n "$(PATH_FDAPDE_CPP)" ]; then $(RM) -r "$(PATH_FDAPDE_CPP)"; fi
+	@if [ -n "$(PATH_REPO)" ]; then $(RM) -r "$(PATH_REPO)/libraries"; fi
 	@$(RM) .env
 	@printf 'Additional cleanup completed.\n\n'
 

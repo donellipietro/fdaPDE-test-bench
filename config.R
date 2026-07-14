@@ -13,7 +13,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_REPO <- normalizePath(".", mustWork = FALSE)
     PATH_OUTPUT <- Sys.getenv("TESTBENCH_OUTPUT", unset = PATH_REPO)
     PATH_TMP <- file.path(PATH_OUTPUT, "tmp")
-    PATH_FDAPDE_CPP <- file.path(PATH_REPO, "fdaPDE-cpp")
+    PATH_FDAPDE_CPP <- file.path(PATH_REPO, "libraries", "fdaPDE-cpp")
     FDAPDE_CPP_REPOSITORY <- Sys.getenv(
       "FDAPDE_CPP_REPOSITORY",
       unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
@@ -61,7 +61,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_REPO <- normalizePath(".", mustWork = FALSE)
     PATH_OUTPUT <- Sys.getenv("TESTBENCH_OUTPUT", unset = PATH_REPO)
     PATH_TMP <- file.path(PATH_OUTPUT, "tmp")
-    PATH_FDAPDE_CPP <- file.path(PATH_REPO, "fdaPDE-cpp")
+    PATH_FDAPDE_CPP <- file.path(PATH_REPO, "libraries", "fdaPDE-cpp")
     FDAPDE_CPP_REPOSITORY <- Sys.getenv(
       "FDAPDE_CPP_REPOSITORY",
       unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
