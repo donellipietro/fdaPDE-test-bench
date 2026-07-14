@@ -3,7 +3,7 @@
 
 #include <fdaPDE/models.h>
 
-#include "../include/json.hpp"
+#include <nlohmann/json.hpp>
 
 #include <chrono>
 #include <cmath>

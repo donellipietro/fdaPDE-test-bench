@@ -9,7 +9,7 @@ Usage:
   ./cpp/compile_slurm.sh --make-help
 
 Options:
-  --parsable              Print only the submitted job id.
+  --parsable              Submit asynchronously and print only the job id.
   --dependency JOBID      Add an afterok dependency.
   -h, --help              Show this help.
 
@@ -224,6 +224,10 @@ SBATCH_ARGS=(
   --cpus-per-task="${CPUS}"
 )
 
+if [[ "${PARSABLE}" -eq 0 ]]; then
+  SBATCH_ARGS+=(--wait)
+fi
+
 if [[ -n "${DEPENDENCY}" ]]; then
   SBATCH_ARGS+=(--dependency="afterok:${DEPENDENCY}")
 fi
@@ -245,7 +249,11 @@ if is_truthy "${SLURM_DRY_RUN:-0}"; then
   exit 0
 fi
 
-JOB_ID="$(sbatch "${SBATCH_ARGS[@]}")"
+if ! JOB_ID="$(sbatch "${SBATCH_ARGS[@]}")"; then
+  echo "Error: Slurm compile job ${JOB_ID:-unknown} failed." >&2
+  echo "Logs: ${LOG_DIR}" >&2
+  exit 1
+fi
 if [[ "${PARSABLE}" -eq 1 ]]; then
   printf '%s\n' "${JOB_ID}"
 else

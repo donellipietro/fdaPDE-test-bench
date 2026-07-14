@@ -26,8 +26,14 @@ cat("R library paths:\n")
 print(.libPaths())
 cat("CRAN mirror:", getOption("repos")[["CRAN"]], "\n")
 
-if (!requireNamespace("glue", quietly = TRUE)) {
-  install.packages("glue", lib = install_lib)
+cran_packages <- c(
+  "dplyr", "ggplot2", "glue", "gridExtra", "jsonlite", "RColorBrewer", "tidyr"
+)
+missing_packages <- cran_packages[
+  !vapply(cran_packages, requireNamespace, quietly = TRUE, FUN.VALUE = logical(1))
+]
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages, lib = install_lib)
 }
 
 if (requireNamespace("femR", quietly = TRUE)) {

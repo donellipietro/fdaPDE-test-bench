@@ -25,7 +25,9 @@ To run tests using the provided utilities, follow these steps:
 
    `build` installs dependencies and prepares the profile-selected
    repository-local `libraries/fdaPDE-cpp` clone, including its recorded
-   `fdaPDE/core` submodule. It may access remote repositories. On an already
+   `fdaPDE/core` submodule. It also prepares nlohmann/json `v3.12.0` in
+   `libraries/nlohmann-json`. Both destinations are reused, and the pinned JSON
+   checkout can be prepared offline after its initial clone. On an already
    provisioned machine, initialize the profile without reinstalling:
 
    ```bash
@@ -74,6 +76,49 @@ For a small queue/batch check, pass `SMOKE_TEST=1`:
 ```bash
 SMOKE_TEST=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```
+
+### HPC/Slurm Quick Start
+
+The `hpc-slurm` profile uses a repository-local Apptainer/Singularity image for
+all C++ compilation and fit execution. A reviewer needs Bash, Make, Git, host
+`Rscript`, `/usr/bin/time`, and either `apptainer` or `singularity`; real jobs
+also require host `sbatch`. No host C++ compiler, Eigen, or Ipopt installation
+is required.
+
+```bash
+make build PROFILE=hpc-slurm
+SMOKE_TEST=1 make run_test PROFILE=hpc-slurm TEST_SUITE=smoothing-example TEST_NAME=all
+```
+
+The build pulls `docker://aldoclemente/fdapde-docker:latest` to
+`libraries/fdapde-docker-latest.sif`, prepares `libraries/fdaPDE-cpp` and
+`libraries/nlohmann-json`, and installs required R packages. When
+`R_LIBS_USER` is unset, the profile uses the ignored `libraries/R` directory.
+Generated builds, queues, results, images, and logs use the standard profile
+paths.
+
+The existing SIF is validated and reused without contacting the registry. To
+update it, remove that file explicitly and rerun the build. The `latest` tag is
+mutable, so fresh clones built at different times can receive different image
+content; set `SINGULARITY_IMAGE_SOURCE` to an immutable digest URI for a
+review-frozen run. Set `SINGULARITY_IMAGE` to override the local SIF path.
+[Apptainer](https://apptainer.org/docs/user/latest/docker_and_oci.html) and
+[SingularityCE](https://docs.sylabs.io/guides/latest/user-guide/singularity_and_docker.html)
+both support pulling Docker/OCI images into reusable SIF files.
+
+The currently published image metadata includes base R, but the testbench runs
+R on the host because Make configuration, R package installation, queue
+generation, aggregation, and plotting happen outside C++ execution. `make
+build` installs the required R packages automatically. Slurm submission also
+stays on the host.
+
+If no supported container runtime is visible, load the cluster's Apptainer or
+SingularityCE module and rerun the build. If the registry or network is
+unavailable, place a previously prepared SIF at the configured path; it will be
+reused without registry access. A fully offline build also needs the JSON and
+fdaPDE clones plus the R library pre-staged under `libraries/`. Use
+`SLURM_DRY_RUN=1` to inspect compile and test submissions without calling
+`sbatch`.
 
 ### Smoothing Example
 

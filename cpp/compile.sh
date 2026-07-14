@@ -44,6 +44,7 @@ USAGE
 
 CPP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${CPP_DIR}/.." && pwd)"
+PATH_NLOHMANN_JSON="${PROJECT_DIR}/libraries/nlohmann-json"
 
 if [[ ! -f "${PROJECT_DIR}/.env" ]]; then
   echo "Error: .env not found. Run: make build TESTBENCH_PROFILE=<profile>" >&2
@@ -79,6 +80,15 @@ prepare_fdapde() {
     "${PATH_FDAPDE_CPP}"
   PATH_FDAPDE_CORE="${PATH_FDAPDE_CPP}/fdaPDE/core"
   FDAPDE_PREPARED=1
+}
+
+prepare_json() {
+  if [[ "${JSON_PREPARED:-0}" == "1" ]]; then
+    return
+  fi
+
+  "${CPP_DIR}/prepare_json.sh" "${PATH_NLOHMANN_JSON}"
+  JSON_PREPARED=1
 }
 
 list_models() {
@@ -136,12 +146,13 @@ ensure_ipopt_options() {
 }
 
 compile_flags() {
-  local eigen_compat_header="${PATH_CPP}/include/eigen_compat.h"
-  local eigen_compat_flags=()
+  local eigen_plugin="${PATH_CPP}/include/eigen_arraybase_plugin.h"
+  local eigen_plugin_flags=()
   local configured_flags
   local flag
 
   include_flags=()
+  include_flags+=("-I${PATH_NLOHMANN_JSON}/include")
   [[ -n "${PATH_FDAPDE_CPP:-}" ]] && include_flags+=("-I${PATH_FDAPDE_CPP}")
   [[ -n "${PATH_FDAPDE_CORE:-}" ]] && include_flags+=("-I${PATH_FDAPDE_CORE}")
   [[ -n "${PATH_IPOPT_INCLUDE:-}" ]] && include_flags+=("-I${PATH_IPOPT_INCLUDE}")
@@ -160,19 +171,12 @@ compile_flags() {
     )
   fi
 
-  # Temporary workaround for the Eigen version in the current Singularity image.
-  # Remove this block and cpp/include/eigen_compat.h once the image exposes Eigen::all.
   if [[ -n "${SINGULARITY_IMAGE:-}" ]]; then
-    if [[ ! -f "${eigen_compat_header}" ]]; then
-      echo "Error: Eigen compatibility header not found: ${eigen_compat_header}" >&2
+    if [[ ! -f "${eigen_plugin}" ]]; then
+      echo "Error: Eigen compatibility plugin not found: ${eigen_plugin}" >&2
       exit 1
     fi
-
-    eigen_compat_flags=(
-      -DEIGEN_COMPAT_FORCE_PLACEHOLDER_ALL
-      -include
-      "${eigen_compat_header}"
-    )
+    eigen_plugin_flags=("-DEIGEN_ARRAYBASE_PLUGIN=\"${eigen_plugin}\"")
   fi
 
   cxx_flags=()
@@ -184,12 +188,9 @@ compile_flags() {
       cxx_flags+=("${flag}")
     done
   fi
-  if [[ "${#eigen_compat_flags[@]}" -gt 0 ]]; then
-    for flag in "${eigen_compat_flags[@]}"; do
-      cxx_flags+=("${flag}")
-    done
+  if [[ "${#eigen_plugin_flags[@]}" -gt 0 ]]; then
+    cxx_flags+=("${eigen_plugin_flags[@]}")
   fi
-
   if [[ -n "${LDFLAGS:-}" ]]; then
     split_flags "${LDFLAGS}"
     ld_flags=("${SPLIT_FLAGS_RESULT[@]}")
@@ -272,7 +273,8 @@ headers_newer_than() {
   local out="$1"
   local newer root
 
-  for root in "${PATH_CPP}" "${PATH_FDAPDE_CPP:-}/fdaPDE"; do
+  for root in "${PATH_CPP}" "${PATH_FDAPDE_CPP:-}/fdaPDE" \
+    "${PATH_NLOHMANN_JSON}/include"; do
     [[ -d "${root}" ]] || continue
     newer="$(find "${root}" -type f \( -name '*.h' -o -name '*.hpp' \) -newer "${out}" -print -quit)"
     [[ -z "${newer}" ]] || return 0
@@ -340,6 +342,7 @@ compile_model() {
   local compile_job_limit compile_status pid
   local compile_pids
 
+  prepare_json
   prepare_fdapde
 
   if [[ ! -d "${model_dir}" ]]; then

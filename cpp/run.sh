@@ -15,7 +15,7 @@ Options:
 
 The runtime is selected from .env:
   - empty SINGULARITY_IMAGE: run on the host
-  - filled SINGULARITY_IMAGE: run through singularity exec
+  - filled SINGULARITY_IMAGE: run through apptainer or singularity exec
 USAGE
 }
 
@@ -85,10 +85,14 @@ export VECLIB_MAXIMUM_THREADS="${VECLIB_MAXIMUM_THREADS:-1}"
 WORKDIR="${WORKDIR:-${PATH_REPO:-${PROJECT_DIR}}}"
 
 if [[ -n "${SINGULARITY_IMAGE:-}" ]]; then
-  RUNTIME="Singularity"
-
-  if ! command -v singularity >/dev/null 2>&1; then
-    echo "Error: SINGULARITY_IMAGE is set, but singularity is not available in PATH." >&2
+  if command -v apptainer >/dev/null 2>&1; then
+    CONTAINER_RUNTIME="apptainer"
+    RUNTIME="Apptainer"
+  elif command -v singularity >/dev/null 2>&1; then
+    CONTAINER_RUNTIME="singularity"
+    RUNTIME="Singularity"
+  else
+    echo "Error: SINGULARITY_IMAGE is set, but Apptainer and SingularityCE are unavailable." >&2
     exit 1
   fi
 
@@ -126,7 +130,7 @@ if [[ -n "${SINGULARITY_IMAGE:-}" ]]; then
     singularity_args+=(--bind "${SINGULARITY_BIND_PATHS}")
   fi
 
-  exec singularity exec "${singularity_args[@]}" "${SINGULARITY_IMAGE}" "$@"
+  exec "${CONTAINER_RUNTIME}" exec "${singularity_args[@]}" "${SINGULARITY_IMAGE}" "$@"
 fi
 
 exec "$@"

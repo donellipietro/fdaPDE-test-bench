@@ -53,8 +53,10 @@ fit_model <- function(model_name, domain, data, path_list, test_options) {
 
   ## Run the model-specific binary and measure its peak resident memory ----
   binary <- file.path(path_list$cpp_script, glue::glue("fit_model_{solver_name}"))
+  runner <- file.path(path_list$repo, "cpp", "run.sh")
   command <- glue::glue(
-    "{shQuote(binary)} {shQuote(params_file)} > {shQuote(log_file)} 2>&1"
+    "{shQuote(runner)} --quiet -- {shQuote(binary)} {shQuote(params_file)} ",
+    "> {shQuote(log_file)} 2>&1"
   )
   run_stats <- system_with_memory(command, ignore.stdout = IGNORE_CPP_OUTPUT)
   if (!identical(run_stats$status, 0L)) {
