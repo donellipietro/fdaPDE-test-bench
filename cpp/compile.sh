@@ -64,6 +64,23 @@ path_required() {
   fi
 }
 
+prepare_fdapde() {
+  if [[ "${FDAPDE_PREPARED:-0}" == "1" ]]; then
+    return
+  fi
+
+  # Refresh the profile-selected local stack once per compile invocation.
+  path_required FDAPDE_CPP_REPOSITORY
+  path_required FDAPDE_CPP_BRANCH
+  path_required PATH_FDAPDE_CPP
+  "${CPP_DIR}/clone_fdapde.sh" \
+    "${FDAPDE_CPP_REPOSITORY}" \
+    "${FDAPDE_CPP_BRANCH}" \
+    "${PATH_FDAPDE_CPP}"
+  PATH_FDAPDE_CORE="${PATH_FDAPDE_CPP}/fdaPDE/core"
+  FDAPDE_PREPARED=1
+}
+
 list_models() {
   local model_dir model mains
 
@@ -253,13 +270,14 @@ list_targets_for_model() {
 
 headers_newer_than() {
   local out="$1"
-  local newer
+  local newer root
 
-  newer="$(
-    find "${PATH_CPP}" -type f \( -name '*.h' -o -name '*.hpp' \) \
-      -newer "${out}" -print -quit
-  )"
-  [[ -n "${newer}" ]]
+  for root in "${PATH_CPP}" "${PATH_FDAPDE_CPP:-}/fdaPDE"; do
+    [[ -d "${root}" ]] || continue
+    newer="$(find "${root}" -type f \( -name '*.h' -o -name '*.hpp' \) -newer "${out}" -print -quit)"
+    [[ -z "${newer}" ]] || return 0
+  done
+  return 1
 }
 
 normalized_compile_jobs() {
@@ -321,6 +339,8 @@ compile_model() {
   local mains selected_mains src
   local compile_job_limit compile_status pid
   local compile_pids
+
+  prepare_fdapde
 
   if [[ ! -d "${model_dir}" ]]; then
     echo "Error: model directory not found: ${model_dir}" >&2

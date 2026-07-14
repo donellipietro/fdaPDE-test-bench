@@ -3,6 +3,7 @@
 # - Desc: Editable runtime profiles for this repository.
 # = ========================================================================== =
 
+# Make evaluates configuration before install, so this entry point stays base R only.
 source("src/utils/config.R")
 
 
@@ -13,7 +14,11 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_REPO <- normalizePath(".", mustWork = FALSE)
     PATH_OUTPUT <- Sys.getenv("TESTBENCH_OUTPUT", unset = PATH_REPO)
     PATH_TMP <- file.path(PATH_OUTPUT, "tmp")
-    PATH_FDAPDE_CPP <- Sys.getenv("PATH_FDAPDE_CPP", unset = "")
+    PATH_FDAPDE_CPP <- file.path(PATH_REPO, "libraries", "fdaPDE-cpp")
+    FDAPDE_CPP_REPOSITORY <- Sys.getenv(
+      "FDAPDE_CPP_REPOSITORY",
+      unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
+    )
 
     list(
       PATH_REPO = PATH_REPO,
@@ -28,15 +33,21 @@ TESTBENCH_CONFIG_PROFILES <- list(
       PATH_TMP_RESULTS = file.path(PATH_TMP, "results"),
       PATH_BUILD = file.path(PATH_OUTPUT, "build"),
 
-      CC = Sys.getenv("CC", unset = "gcc"),
-      CXX = Sys.getenv("CXX", unset = "g++"),
+      CC = Sys.getenv("CC", unset = "/opt/homebrew/bin/gcc-15"),
+      CXX = Sys.getenv("CXX", unset = "/opt/homebrew/bin/g++-15"),
       PATH_FDAPDE_CPP = PATH_FDAPDE_CPP,
       PATH_FDAPDE_CORE = if (nzchar(PATH_FDAPDE_CPP)) {
         file.path(PATH_FDAPDE_CPP, "fdaPDE/core")
       } else {
         ""
       },
-      PATH_EIGEN_INCLUDE = Sys.getenv("PATH_EIGEN_INCLUDE", unset = ""),
+      PATH_EIGEN_INCLUDE = Sys.getenv(
+        "PATH_EIGEN_INCLUDE",
+        unset = "/opt/homebrew/opt/eigen/include/eigen3"
+      ),
+      FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
+      # Outer branch selected by this profile for the local fdaPDE stack
+      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop-Splines"),
 
       SINGULARITY_IMAGE = "",
       SINGULARITY_BIND_PATHS = PATH_REPO,
@@ -54,7 +65,11 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_REPO <- normalizePath(".", mustWork = FALSE)
     PATH_OUTPUT <- Sys.getenv("TESTBENCH_OUTPUT", unset = PATH_REPO)
     PATH_TMP <- file.path(PATH_OUTPUT, "tmp")
-    PATH_FDAPDE_CPP <- Sys.getenv("PATH_FDAPDE_CPP", unset = "")
+    PATH_FDAPDE_CPP <- file.path(PATH_REPO, "libraries", "fdaPDE-cpp")
+    FDAPDE_CPP_REPOSITORY <- Sys.getenv(
+      "FDAPDE_CPP_REPOSITORY",
+      unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
+    )
     SINGULARITY_BIND_PATHS <- unique(c(PATH_REPO, PATH_OUTPUT, PATH_FDAPDE_CPP))
     SINGULARITY_BIND_PATHS <- SINGULARITY_BIND_PATHS[nzchar(SINGULARITY_BIND_PATHS)]
 
@@ -80,6 +95,9 @@ TESTBENCH_CONFIG_PROFILES <- list(
         ""
       },
       PATH_EIGEN_INCLUDE = Sys.getenv("PATH_EIGEN_INCLUDE", unset = ""),
+      FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
+      # Outer branch selected by this profile for the local fdaPDE stack
+      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop-Splines"),
 
       SINGULARITY_IMAGE = Sys.getenv("SINGULARITY_IMAGE", unset = ""),
       SINGULARITY_BIND_PATHS = paste(SINGULARITY_BIND_PATHS, collapse = ","),

@@ -88,10 +88,10 @@ queue_threading_mode <- function(path_queue, default = "single") {
   modes <- unique(modes)
   if (length(modes) != 1) {
     stop(
-      paste0(
+      glue::glue(
         "Queue contains mixed threading modes: ",
-        paste(modes, collapse = ", "),
-        ". Split these options into separate tests."
+        "{glue::glue_collapse(modes, sep = ', ')}. ",
+        "Split these options into separate tests."
       ),
       call. = FALSE
     )

@@ -26,7 +26,7 @@ load_config <- function() {
 config_path <- function(...) {
   path <- file.path(...)
   needs_slash <- !grepl("[/\\\\]$", path)
-  path[needs_slash] <- paste0(path[needs_slash], .Platform$file.sep)
+  path[needs_slash] <- glue::glue("{path[needs_slash]}{.Platform$file.sep}")
   path
 }
 #' Create and return the standard path list for a test suite.
@@ -114,9 +114,9 @@ update_paths <- function(path_list, name_main_test, test_options) {
   )
   if (length(compiled_files) == 0) {
     stop(
-      paste0(
+      glue::glue(
         "The C++ model has not been compiled!\n",
-        "Run: make compile MODEL=", test_options$cpp_script
+        "Run: make compile MODEL={test_options$cpp_script}"
       )
     )
   }
@@ -131,18 +131,18 @@ get_script_path <- function() {
   args <- commandArgs(trailingOnly = FALSE)
   path <- sub("--file=", "", args[grep("--file=", args)])
   if (length(path) > 0) {
-    return(paste0(dirname(normalizePath(path)), "/"))
+    return(config_path(dirname(normalizePath(path))))
   }
 
   # Try source()
   if (!is.null(sys.frames()[[1]]$ofile)) {
-    return(paste0(dirname(normalizePath(sys.frames()[[1]]$ofile)), "/"))
+    return(config_path(dirname(normalizePath(sys.frames()[[1]]$ofile))))
   }
 
   # Try RStudio
   if (requireNamespace("rstudioapi", quietly = TRUE) &&
     rstudioapi::isAvailable()) {
-    return(paste0(dirname(normalizePath(rstudioapi::getSourceEditorContext()$path)), "/"))
+    return(config_path(dirname(normalizePath(rstudioapi::getSourceEditorContext()$path))))
   }
 
   # Fallback

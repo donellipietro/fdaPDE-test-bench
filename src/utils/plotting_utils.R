@@ -185,7 +185,7 @@ as_curve_matrix <- function(locations, obj, prefix = "curve") {
     })
     M <- do.call(cbind, cols)
     cn <- names(obj)
-    if (is.null(cn)) cn <- paste0(prefix, seq_len(ncol(M)))
+    if (is.null(cn)) cn <- glue::glue("{prefix}{seq_len(ncol(M))}")
     colnames(M) <- cn
     return(M)
   }
@@ -203,7 +203,7 @@ as_curve_matrix <- function(locations, obj, prefix = "curve") {
       stop("'f' (matrix) must have nrow equal to length(locations).")
     M <- obj
     if (is.null(colnames(M)))
-      colnames(M) <- paste0(prefix, seq_len(ncol(M)))
+      colnames(M) <- glue::glue("{prefix}{seq_len(ncol(M))}")
     return(M)
   }
   
@@ -794,7 +794,7 @@ plot.grouped_violins <- function(data,
 #       - one column per model in loaded_results$model_names
 #       - one column per varying option (added upstream)
 #   * title_prefix: string prefix for figure titles
-#   * values_names: unused here (kept for API parity; pass NULL)
+#   * values_names: y-axis label passed to the plotting helpers
 #   * order: optional integer vector to reorder varying_options (default: 1:k)
 #   * limits: optional y-axis limits c(ymin, ymax) for value scales
 #   * plots_catalog: list of toggles {boxplots, lines, logx, loglog, normalized}
@@ -835,6 +835,13 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
   
   ## Detect groups (values of the first varying option will become x-axis)
   groups <- sort(unique(data_plot_orig$Group))
+
+  page_started <- FALSE
+  draw_plot_page <- function(plot_grob) {
+    if (page_started) grid::grid.newpage()
+    grid::grid.draw(plot_grob)
+    page_started <<- TRUE
+  }
   
   ## If there is more than one group, plot them sequentially
   for (group in groups) {  # group <- groups[1]
@@ -843,11 +850,10 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
     data_plot <- data_plot_orig[data_plot_orig$Group == group, ]
     
     ## Generate title
-    title <- paste(
-      title_prefix,
-      name_varying_options[1],
-      ifelse(length(groups) > 1, paste0("- ", group), "")
-    )
+    group_suffix <- if (length(groups) > 1) glue::glue("- {group}") else ""
+    title <- trimws(glue::glue(
+      "{title_prefix} {name_varying_options[1]} {group_suffix}"
+    ))
     
     ## Rooms for plots
     boxplot_list <- list()
@@ -874,8 +880,12 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
       combinations_options <- do.call(data.frame, lapply(mg, as.vector))
       colnames(combinations_options) <- names_options_selected
       
-      labels_rows <- if (length(labels_options_selected) >= 1) paste(labels_options_selected[1], "=", options_grid_selected[[1]]) else ""
-      labels_cols <- if (length(labels_options_selected) >= 2) paste(labels_options_selected[2], "=", options_grid_selected[[2]]) else ""
+      labels_rows <- if (length(labels_options_selected) >= 1) {
+        glue::glue("{labels_options_selected[1]} = {options_grid_selected[[1]]}")
+      } else ""
+      labels_cols <- if (length(labels_options_selected) >= 2) {
+        glue::glue("{labels_options_selected[2]} = {options_grid_selected[[2]]}")
+      } else ""
     }
     
     for (j in 1:nrow(combinations_options)) {  # j <- 1
@@ -893,6 +903,7 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
         data_plot_trimmed <- data_plot[condition, c(name_aggregation_option, model_names)]
       }
       colnames(data_plot_trimmed)[1] <- "Group"
+      data_plot_trimmed <- data_plot_trimmed[order(data_plot_trimmed$Group), ]
       
       ## Skip if data is empty
       if (nrow(data_plot_trimmed) == 0) next
@@ -908,7 +919,7 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
       if (isTRUE(plots_catalog$boxplots)) {
         boxplot_list[[j]] <- plot.grouped_boxplots(
           data_plot_trimmed[, c("Group", valid_models)],
-          values_name = NULL,
+          values_name = values_names,
           group_name = group_name,
           subgroup_name = "Approaches",
           subgroup_labels = model_labels[match(valid_models, model_names)],
@@ -922,7 +933,7 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
       if (isTRUE(plots_catalog$lines)) {
         plot_list[[j]] <- plot.multiple_lines(
           data_plot_aggregated[, c("Group", valid_models)],
-          values_name = NULL,
+          values_name = values_names,
           x_name = group_name,
           x_breaks = TRUE,
           subgroup_name = "Approaches",
@@ -939,7 +950,7 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
       if (isTRUE(plots_catalog$logx)) {
         plot_logx_list[[j]] <- plot.multiple_lines(
           data_plot_aggregated[, c("Group", valid_models)],
-          values_name = NULL,
+          values_name = values_names,
           x_name = group_name,
           x_breaks = TRUE,
           subgroup_name = "Approaches",
@@ -956,7 +967,7 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
       if (isTRUE(plots_catalog$loglog)) {
         plot_loglog_list[[j]] <- plot.multiple_lines(
           data_plot_aggregated[, c("Group", valid_models)],
-          values_name = NULL,
+          values_name = values_names,
           x_name = group_name,
           x_breaks = TRUE,
           subgroup_name = "Approaches",
@@ -973,7 +984,7 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
       if (isTRUE(plots_catalog$normalized)) {
         plot_loglog_normalized_list[[j]] <- plot.multiple_lines(
           data_plot_aggregated[, c("Group", valid_models)],
-          values_name = NULL,
+          values_name = values_names,
           x_name = group_name,
           x_breaks = TRUE,
           subgroup_name = "Approaches",
@@ -993,31 +1004,31 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
     if (isTRUE(plots_catalog$boxplots)) {
       boxplot <- arrangeGrob(grobs = boxplot_list, ncol = ncols, as.table = FALSE)
       boxplot <- labled_plots_grid(boxplot, title, labels_cols, labels_rows, 9, 7)
-      grid.arrange(boxplot)
+      draw_plot_page(boxplot)
     }
     
     if (isTRUE(plots_catalog$lines)) {
       plot <- arrangeGrob(grobs = plot_list, ncol = ncols, as.table = FALSE)
       plot <- labled_plots_grid(plot, title, labels_cols, labels_rows, 9, 7)
-      grid.arrange(plot)
+      draw_plot_page(plot)
     }
     
     if (isTRUE(plots_catalog$logx)) {
       plot_logx <- arrangeGrob(grobs = plot_logx_list, ncol = ncols, as.table = FALSE)
       plot_logx <- labled_plots_grid(plot_logx, title, labels_cols, labels_rows, 9, 7)
-      grid.arrange(plot_logx)
+      draw_plot_page(plot_logx)
     }
     
     if (isTRUE(plots_catalog$loglog)) {
       plot_loglog <- arrangeGrob(grobs = plot_loglog_list, ncol = ncols, as.table = FALSE)
       plot_loglog <- labled_plots_grid(plot_loglog, title, labels_cols, labels_rows, 9, 7)
-      grid.arrange(plot_loglog)
+      draw_plot_page(plot_loglog)
     }
     
     if (isTRUE(plots_catalog$normalized)) {
       plot_loglog_normalized <- arrangeGrob(grobs = plot_loglog_normalized_list, ncol = ncols, as.table = FALSE)
       plot_loglog_normalized <- labled_plots_grid(plot_loglog_normalized, title, labels_cols, labels_rows, 9, 7)
-      grid.arrange(plot_loglog_normalized)
+      draw_plot_page(plot_loglog_normalized)
     }
   }
 }

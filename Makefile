@@ -52,6 +52,9 @@ PATH_LOGS := $(call config_value,PATH_LOGS)
 PATH_TMP_DATA := $(call config_value,PATH_TMP_DATA)
 PATH_TMP_RESULTS := $(call config_value,PATH_TMP_RESULTS)
 PATH_BUILD := $(call config_value,PATH_BUILD)
+PATH_FDAPDE_CPP := $(call config_value,PATH_FDAPDE_CPP)
+FDAPDE_CPP_REPOSITORY := $(call config_value,FDAPDE_CPP_REPOSITORY)
+FDAPDE_CPP_BRANCH := $(call config_value,FDAPDE_CPP_BRANCH)
 TEST_EXECUTION_STRATEGY := $(call config_value,TEST_EXECUTION_STRATEGY)
 COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
 
@@ -114,7 +117,7 @@ create_dirs:
 	@echo "Creating necessary directories..."
 	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --create-dirs
 
-## Write .env, create directories, and install dependencies
+## Write .env, create directories, install dependencies, and prepare fdaPDE-cpp
 build:
 	@if [ -z "$(REQUESTED_PROFILE)" ]; then \
 		echo ""; \
@@ -128,6 +131,9 @@ build:
 		echo ""; \
 	else \
 		$(MAKE) --no-print-directory config install PROFILE="$(TESTBENCH_PROFILE)" && \
+		printf '\nInstalling fdaPDE-cpp...\n' && \
+		./cpp/clone_fdapde.sh "$(FDAPDE_CPP_REPOSITORY)" "$(FDAPDE_CPP_BRANCH)" "$(PATH_FDAPDE_CPP)" && \
+		printf 'Installation completed.\n\n' && \
 		printf 'Profile %s build completed.\n\n' "$(TESTBENCH_PROFILE)"; \
 	fi
 
@@ -228,6 +234,8 @@ distclean: clean clean_compiled
 	@$(RM) -r "$(PATH_IMAGES)"
 	@$(RM) -r "$(PATH_RESULTS)"
 	@$(RM) -r "$(PATH_TEST_DATA)"
+	@$(RM) -r "$(PATH_TMP)"
+	@if [ -n "$(PATH_REPO)" ]; then $(RM) -r "$(PATH_REPO)/libraries"; fi
 	@$(RM) .env
 	@printf 'Additional cleanup completed.\n\n'
 
@@ -235,6 +243,10 @@ distclean: clean clean_compiled
 
 ## Run all the batches of a test with the active profile strategy
 # usage: make run_test TEST_SUITE=centering TEST_NAME=test1
+ifneq ($(strip $(TEST_SUITE)),)
+run_test: MODEL := $(TEST_SUITE)
+run_test: compile
+endif
 run_test: ensure_env
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
 		echo ""; \

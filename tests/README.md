@@ -4,8 +4,11 @@ Each test suite lives in `tests/<suite_name>/` and is run through the root
 Makefile:
 
 ```bash
-make run_test TEST_SUITE=example_data_decomposition TEST_NAME=test1
+make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```
+
+Before execution, `run_test` invokes the standard `compile` target with the
+test suite as its model directory.
 
 `make run_test` uses the active profile from `config.R`: `serial`, `parallel`,
 or `slurm`.
@@ -36,7 +39,8 @@ scripts.
 
 ## Bundled Suites
 
-- `example_data_decomposition`: runnable fPCA-oriented example.
+- `smoothing-example`: paired 1D SRPDE FEM/spline experiments following the
+  template batch/wrapper/evaluation flow, with peak RAM recorded in MiB.
 - `template_base`: copy this when starting a new suite, then fill in the
   placeholders.
 
@@ -53,6 +57,14 @@ scripts.
 Use `tests/<suite>/config.R` for suite names, default test names, and local run
 flags. Use the root `config.R` for machine paths and execution strategy.
 
+## R String Construction
+
+Use `glue::glue()` for scalar interpolation in messages, identifiers, and file
+names, and `glue::glue_collapse()` when joining a character vector. Use
+`file.path()` or `config_path()` for paths and retain `sprintf()` only for
+fixed-width numeric formatting inside `glue`. Root configuration stays base R
+because Make evaluates it before runtime dependencies are installed.
+
 ## Smoke Tests
 
 `SMOKE_TEST=1` is passed by `make run_test` into `src/init.R`, `main.R`, and
@@ -60,5 +72,5 @@ Slurm jobs. Suite `config.R` files should parse it and `generate_options.R`
 should use it to reduce repetitions and/or option grids.
 
 ```bash
-SMOKE_TEST=1 make run_test TEST_SUITE=example_data_decomposition TEST_NAME=test1
+SMOKE_TEST=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```

@@ -16,7 +16,7 @@ fit_model <- function(model_name, domain, data, path_list, test_options) {
          model2 = return(fdaPDE_model(model_name, domain, data, path_list, test_options)),
          ## ....
          {
-           stop(paste("The model", model_name, "does not exist"))
+           stop(glue::glue("The model {model_name} does not exist"))
          }
   )
 }
@@ -45,7 +45,11 @@ MV <- function(data, test_options) {
   
   memory_usage <- r_peak_memory_mb()
   end.time <- Sys.time()
-  cat(paste("finished after", end.time - start.time, attr(end.time - start.time, "units"), "\n"))
+  elapsed <- end.time - start.time
+  cat(glue::glue(
+    "finished after {elapsed} {attr(elapsed, 'units')}\n",
+    .trim = FALSE
+  ))
   
   
   # Save results ----
@@ -61,7 +65,7 @@ MV <- function(data, test_options) {
 }
 
 
-## Function: fPCA
+## Function: external fdaPDE model
 # - Args:
 #   * model_name: string identifying the functional model variant
 #   * domain: list containing mesh information ($fdapde_mesh)
@@ -82,22 +86,22 @@ fdaPDE_model <- function(model_name, domain, data, path_list, test_options) {
   path_cpp_script  <- path_list$cpp_script
   path_batch       <- path_list$batch
   path_tmp_data    <- path_list$tmp_data
-  path_mesh        <- paste0(path_list$tmp_data, "mesh/")
+  path_mesh        <- config_path(path_list$tmp_data, "mesh")
   mkdir(path_mesh)
   path_tmp_results <- path_list$tmp_results
   
   # Write data for C++ scripts ----
   
   ## Data matrix and locations ----
-  # write.csv(format(..., digits = 16), file = paste0(path_tmp_data, "... .csv"))
+  # write.csv(format(..., digits = 16), file = file.path(path_tmp_data, "... .csv"))
   
   ## Mesh ----
   mesh <- domain$fdapde_mesh
-  write.csv(format(mesh$nodes, digits = 16), paste0(path_mesh, "points.csv"))
-  write.csv(format(mesh$triangles, digits = 16), paste0(path_mesh, "elements.csv"))
-  write.csv(format(1 * mesh$nodesmarkers, digits = 16), paste0(path_mesh, "boundary.csv"))
-  write.csv(format(mesh$neighbors, digits = 16), paste0(path_mesh, "neigh.csv"))
-  write.csv(format(mesh$edges, digits = 16), paste0(path_mesh, "edges.csv"))
+  write.csv(format(mesh$nodes, digits = 16), file.path(path_mesh, "points.csv"))
+  write.csv(format(mesh$triangles, digits = 16), file.path(path_mesh, "elements.csv"))
+  write.csv(format(1 * mesh$nodesmarkers, digits = 16), file.path(path_mesh, "boundary.csv"))
+  write.csv(format(mesh$neighbors, digits = 16), file.path(path_mesh, "neigh.csv"))
+  write.csv(format(mesh$edges, digits = 16), file.path(path_mesh, "edges.csv"))
   
   ## Write JSON arguments for the C++ solver ----
   cpp_script_arguments <- list()
@@ -110,13 +114,13 @@ fdaPDE_model <- function(model_name, domain, data, path_list, test_options) {
   cpp_script_arguments$options$lambda_grid <- test_options$regularization$lambda_grid
   ## ....
   
-  file_name_params <- paste0(
-    test_options$name_test, "_", model_name, "_batch",
-    test_options$batch_index, "_params.json"
+  file_name_params <- glue::glue(
+    "{test_options$name_test}_{model_name}_batch",
+    "{test_options$batch_index}_params.json"
   )
   
   write_json(
-    path = paste0(path_cpp_script, file_name_params),
+    path = file.path(path_cpp_script, file_name_params),
     cpp_script_arguments,
     auto_unbox = TRUE,
     pretty = TRUE,
@@ -124,16 +128,23 @@ fdaPDE_model <- function(model_name, domain, data, path_list, test_options) {
   )
   
   # Run C++ executable ----
+  command <- glue::glue(
+    "cd {shQuote(path_cpp_script)} && ./fit_model {shQuote(file_name_params)}"
+  )
   run_stats <- system_with_memory(
-    paste0("cd ", path_cpp_script, " && ", "./fit_model ", file_name_params),
+    command,
     ignore.stdout = IGNORE_CPP_OUTPUT
   )
-  cat(paste("finished after", run_stats$execution_time, attr(run_stats$execution_time, "units"), "\n"))
+  cat(glue::glue(
+    "finished after {run_stats$execution_time} ",
+    "{attr(run_stats$execution_time, 'units')}\n",
+    .trim = FALSE
+  ))
   
   # Save results ----
   
   ## Load results ----
-  # model$results$... <- as.matrix(read.csv(paste(path_tmp_results, "... .csv", sep = "")))
+  # model$results$... <- as.matrix(read.csv(file.path(path_tmp_results, "... .csv")))
   model$results$execution_time <- run_stats$execution_time
   model$results$memory_usage <- run_stats$memory_usage
   

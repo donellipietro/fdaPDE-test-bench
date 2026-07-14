@@ -22,13 +22,13 @@ format_time <- function(t) {
 }
 
 
-## Function: parse_peak_rss_mb
+## Function: parse_peak_rss_mib
 # - Args:
 #   * lines: output produced by /usr/bin/time
 #   * sysname: OS name, defaults to the current system
 # - Desc:
-#   Extracts peak resident memory and normalizes it to MB.
-parse_peak_rss_mb <- function(lines, sysname = Sys.info()[["sysname"]]) {
+#   Extracts peak resident memory and normalizes it to MiB.
+parse_peak_rss_mib <- function(lines, sysname = Sys.info()[["sysname"]]) {
   line <- grep("maximum resident set size|Maximum resident set size", lines, value = TRUE)
   if (length(line) == 0) return(NaN)
 
@@ -37,6 +37,9 @@ parse_peak_rss_mb <- function(lines, sysname = Sys.info()[["sysname"]]) {
 
   if (identical(sysname, "Darwin")) value / 1024^2 else value / 1024
 }
+
+# legacy alias retained for existing suites
+parse_peak_rss_mb <- parse_peak_rss_mib
 
 
 ## Function: r_peak_memory_mb
@@ -54,30 +57,38 @@ r_peak_memory_mb <- function() {
 #   * command: shell command to execute
 #   * ignore.stdout: passed through to system2
 # - Desc:
-#   Runs an external command and returns elapsed time plus peak RSS in MB.
+#   Runs an external command and returns elapsed time, status, and peak RSS in MiB.
 system_with_memory <- function(command, ignore.stdout = FALSE) {
   start.time <- Sys.time()
 
   time_bin <- "/usr/bin/time"
   if (!file.exists(time_bin)) {
-    system(command, ignore.stdout = ignore.stdout)
-    return(list(execution_time = Sys.time() - start.time, memory_usage = NaN))
+    status <- system(command, ignore.stdout = ignore.stdout)
+    return(list(
+      execution_time = Sys.time() - start.time,
+      peak_ram_mib = NaN,
+      memory_usage = NaN,
+      status = status
+    ))
   }
 
   time_file <- tempfile()
   on.exit(unlink(time_file), add = TRUE)
 
   time_arg <- if (identical(Sys.info()[["sysname"]], "Darwin")) "-l" else "-v"
-  system2(
+  status <- system2(
     time_bin,
-    c(time_arg, "-o", time_file, "sh", "-c", command),
+    c(time_arg, "-o", shQuote(time_file), "sh", "-c", shQuote(command)),
     stdout = if (ignore.stdout) FALSE else "",
     stderr = ""
   )
 
+  peak_ram_mib <- parse_peak_rss_mib(readLines(time_file, warn = FALSE))
   list(
     execution_time = Sys.time() - start.time,
-    memory_usage = parse_peak_rss_mb(readLines(time_file, warn = FALSE))
+    peak_ram_mib = peak_ram_mib,
+    memory_usage = peak_ram_mib,
+    status = status
   )
 }
 
@@ -103,7 +114,7 @@ add_results <- function(data, new, groups_names = NULL) {
   
   ## Initialize the new data data.frame
   if (is.null(groups_names)) {
-    new_data <- data.frame(Group = paste(1:n))
+    new_data <- data.frame(Group = as.character(seq_len(n)))
   } else {
     new_data <- data.frame(Group = groups_names)
   }
@@ -169,7 +180,10 @@ extract_new_results <- function(results_evaluation, names_models, name_result) {
 #   aggregates them into structured data.frames, and returns a list
 #   ready for analysis and visualization.
 load_quantitative_results <- function(test_options, path_list) {
-  cat(paste0("\nLoading quantitative results for ", test_options$name_test, " ...\n"))
+  cat(glue::glue(
+    "\nLoading quantitative results for {test_options$name_test} ...\n",
+    .trim = FALSE
+  ))
   
   ## Get model names, labels, and colors
   model_names  <- test_options$model_names
@@ -184,11 +198,15 @@ load_quantitative_results <- function(test_options, path_list) {
   ## Load the first batch defensively
   batch_index <- 1
   ok <- tryCatch({
-    path_batch <- file.path(path_list$results, paste0("batch_", batch_index))
-    load(file.path(path_batch, paste0("batch_", batch_index, "_results_evaluation.RData")))
+    path_batch <- file.path(path_list$results, glue::glue("batch_{batch_index}"))
+    load(file.path(path_batch, glue::glue("batch_{batch_index}_results_evaluation.RData")))
     TRUE
   }, error = function(e) {
-    cat(sprintf("Error in test %s - batch %d: %s\n", test_options$name_test, batch_index, conditionMessage(e)))
+    cat(glue::glue(
+      "Error in test {test_options$name_test} - batch {batch_index}: ",
+      "{conditionMessage(e)}\n",
+      .trim = FALSE
+    ))
     FALSE
   })
   if (!ok) next
@@ -212,18 +230,25 @@ load_quantitative_results <- function(test_options, path_list) {
     
     ## Safely load batch file
     ok <- tryCatch({
-      path_batch <- file.path(path_list$results, paste0("batch_", batch_index))
-      load(file.path(path_batch, paste0("batch_", batch_index, "_results_evaluation.RData")))
+      path_batch <- file.path(path_list$results, glue::glue("batch_{batch_index}"))
+      load(file.path(path_batch, glue::glue("batch_{batch_index}_results_evaluation.RData")))
       TRUE
     }, error = function(e) {
-      cat(sprintf("Error in test %s - batch %d: %s\n", test_options$name_test, batch_index, conditionMessage(e)))
+      cat(glue::glue(
+        "Error in test {test_options$name_test} - batch {batch_index}: ",
+        "{conditionMessage(e)}\n",
+        .trim = FALSE
+      ))
       FALSE
     })
     if (!ok) next
     
     ## Check that results_evaluation exists
     if (!exists("results_evaluation", inherits = FALSE)) {
-      cat(sprintf("Warning: no `results_evaluation` found in batch %d file; skipping.\n", batch_index))
+      cat(glue::glue(
+        "Warning: no `results_evaluation` found in batch {batch_index} file; skipping.\n",
+        .trim = FALSE
+      ))
       next
     }
     
@@ -244,7 +269,7 @@ load_quantitative_results <- function(test_options, path_list) {
       }
     }
     
-    cat(sprintf("- Batch %d loaded\n", batch_index))
+    cat(glue::glue("- Batch {batch_index} loaded\n", .trim = FALSE))
   }
   
   cat("\n")
@@ -385,10 +410,13 @@ load_all_quantitiative_results <- function(path_list, name_main_test) {
     stop("No option files found in the queue for this test.")
   }
   
-  cat.script_title(paste("Results Loader —", TEST_SUITE))
+  cat.script_title(glue::glue("Results Loader — {TEST_SUITE}"))
   cat.section_title("Target")
-  cat(paste0("- Test: ", test_suite, "/", name_main_test, "\n"))
-  cat(paste0("- Options found: ", length(file_options_list), "\n\n"))
+  cat(glue::glue("- Test: {test_suite}/{name_main_test}\n", .trim = FALSE))
+  cat(glue::glue(
+    "- Options found: {length(file_options_list)}\n\n",
+    .trim = FALSE
+  ))
   
   ## Container for all loaded results
   all_results <- NULL
@@ -396,7 +424,7 @@ load_all_quantitiative_results <- function(path_list, name_main_test) {
   ## Iterate options and load quantitative results
   for (file_options in file_options_list) {  # file_options <- file_options_list[1]
     ## Load option JSON
-    test_options <- jsonlite::fromJSON(paste0(path_list$queue, file_options))
+    test_options <- jsonlite::fromJSON(file.path(path_list$queue, file_options))
     
     ## Update paths for this specific option (so load_quantitative_results finds batches)
     path_list_i <- update_paths(path_list, name_main_test, test_options)
@@ -423,7 +451,7 @@ load_all_quantitiative_results <- function(path_list, name_main_test) {
     }
     
     ## Optional: keep the queue clean, mirroring previous workflow
-    file.remove(paste0(path_list$queue, file_options))
+    file.remove(file.path(path_list$queue, file_options))
   }
   
   return(all_results)

@@ -60,14 +60,14 @@ source("src/utils/load_results_utils.R")
 
 ## Load configuration file
 path_this <- get_script_path()
-source(paste0(path_this, "config.R"))
+source(file.path(path_this, "config.R"))
 
 ## Load test-specific functions
-source(paste0("tests/", test_suite, "/utils/wrappers.R"))
-source(paste0("tests/", test_suite, "/utils/fit_and_evaluate.R"))
-source(paste0("tests/", test_suite, "/utils/adjust_results.R"))
-source(paste0("tests/", test_suite, "/utils/generate_data.R"))
-source(paste0("tests/", test_suite, "/utils/models_evaluation.R"))
+source(file.path("tests", test_suite, "utils", "wrappers.R"))
+source(file.path("tests", test_suite, "utils", "fit_and_evaluate.R"))
+source(file.path("tests", test_suite, "utils", "adjust_results.R"))
+source(file.path("tests", test_suite, "utils", "generate_data.R"))
+source(file.path("tests", test_suite, "utils", "models_evaluation.R"))
 
 
 ## Create suite directories ----
@@ -89,14 +89,14 @@ if (length(args) == 0) {
   INTERACTIVE <- TRUE
   
   ## Load the option-generation function
-  source(paste("tests/", test_suite, "/utils/generate_options.R", sep = ""))
+  source(file.path("tests", test_suite, "utils", "generate_options.R"))
   
   ## Select the test you're interested in
   name_main_test <- name_main_test_default
   
   ## Update directories according to the new test
-  path_list$queue <- paste0(path_list$queue, name_main_test, "/")
-  path_list$logs <- paste0(path_list$logs, name_main_test, "/")
+  path_list$queue <- config_path(path_list$queue, name_main_test)
+  path_list$logs <- config_path(path_list$logs, name_main_test)
   mkdir(c(path_list$queue, path_list$logs))
   
   ## Generate all the options for that test
@@ -114,8 +114,8 @@ if (length(args) == 0) {
   file_options <- args[2]
   
   ## Update directories according to the new test
-  path_list$queue <- paste0(path_list$queue, name_main_test, "/")
-  path_list$logs <- paste0(path_list$logs, name_main_test, "/")
+  path_list$queue <- config_path(path_list$queue, name_main_test)
+  path_list$logs <- config_path(path_list$logs, name_main_test)
   mkdir(c(path_list$queue, path_list$logs))
 }
 
@@ -126,27 +126,36 @@ if (is.null(file_options)) {
 }
 
 ## Load selected options
-test_options <- fromJSON(paste0(path_list$queue, file_options))
+test_options <- fromJSON(file.path(path_list$queue, file_options))
 
 ## Update and create work directories for the test selected
 path_list <- update_paths(path_list, name_main_test, test_options)
 
 ## Log file
-file_log_global <- paste0(path_list$logs, "log.txt")
-file_log_specific <- paste0(path_list$logs, "log_", test_options$name_test, ".txt")
+file_log_global <- file.path(path_list$logs, "log.txt")
+file_log_specific <- file.path(
+  path_list$logs,
+  glue::glue("log_{test_options$name_test}.txt")
+)
 if (!INTERACTIVE) {
   ## Console
-  cat("- Running:", test_suite, "/", test_options$name_test, "\n")
+  cat(glue::glue(
+    "- Running: {test_suite} / {test_options$name_test}\n",
+    .trim = FALSE
+  ))
   ## Global log
   sink(file_log_global, append = TRUE)
-  cat("- Running:", test_suite, "/", test_options$name_test, "\n")
+  cat(glue::glue(
+    "- Running: {test_suite} / {test_options$name_test}\n",
+    .trim = FALSE
+  ))
   sink()
   ## Test specific log
   sink(file_log_specific, append = TRUE)
 }
 
 ## Options visualization
-cat.script_title(paste("Test:", TEST_SUITE))
+cat.script_title(glue::glue("Test: {TEST_SUITE}"))
 cat.section_title("Options")
 cat.json(test_options)
 
@@ -179,17 +188,20 @@ plot.points(
 ## Fit the models n_reps times
 if (RUN$tests) {
   for (batch_idx in 1:test_options$test_options$n_reps) {
-    cat(paste0("\nBatch ", batch_idx, ":\n"))
+    cat(glue::glue("\nBatch {batch_idx}:\n", .trim = FALSE))
     
     ## Create batch directory
-    path_list$batch <- paste0(path_list$results, "batch_", batch_idx, "/")
+    path_list$batch <- config_path(path_list$results, glue::glue("batch_{batch_idx}"))
     mkdir(path_list$batch)
     
     ### Generate data ----
     cat("- Generate data\n")
     
     ## File names where the results should be found
-    file_model_vect <- paste0(path_list$batch, "batch_", batch_idx, "_fitted_model_", test_options$model_names, ".RData")
+    file_model_vect <- file.path(
+      path_list$batch,
+      glue::glue("batch_{batch_idx}_fitted_model_{test_options$model_names}.RData")
+    )
     
     ## Generate data only if necessary (no fit found of fit is forced)
     if (any(!file.exists(file_model_vect)) || FORCE_FIT || FORCE_EVALUATE) {
@@ -201,7 +213,7 @@ if (RUN$tests) {
       )
       ## Save data for qualitative results analysis
       if (batch_idx == 1) {
-        save(data, file = paste0(path_list$data, test_options$name_test, ".RData"))
+        save(data, file = file.path(path_list$data, glue::glue("{test_options$name_test}.RData")))
       }
     } else {
       cat("Skipped, data are not necessary!\n")
@@ -226,7 +238,7 @@ if (RUN$tests) {
 # Test finalization ----
 
 ## Remove options file from the queue ----
-file.remove(paste0(path_list$queue, file_options))
+file.remove(file.path(path_list$queue, file_options))
 
 ## Close the log file
 if (!INTERACTIVE) {
