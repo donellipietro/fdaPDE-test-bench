@@ -18,23 +18,23 @@ fit_and_evaluate_models <- function(path_list, data, domain, batch_index, test_o
   results_evaluation <- list()
   evaluation_file <- file.path(
     path_list$batch,
-    paste0("batch_", batch_index, "_results_evaluation.RData")
+    glue::glue("batch_{batch_index}_results_evaluation.RData")
   )
 
   ## Fit and evaluate each requested model ----
   for (model_name in test_options$model_names) {
     model_file <- file.path(
       path_list$batch,
-      paste0("batch_", batch_index, "_fitted_model_", model_name, ".RData")
+      glue::glue("batch_{batch_index}_fitted_model_{model_name}.RData")
     )
-    object_name <- paste0("model_", model_name)
+    object_name <- glue::glue("model_{model_name}")
 
     ## Load a cached fit or run the model wrapper
     if (file.exists(model_file) && !FORCE_FIT) {
       load(model_file)
       model <- get(object_name)
     } else {
-      cat("  fitting", model_name, "\n")
+      cat(glue::glue("  fitting {model_name}\n", .trim = FALSE))
       model <- fit_model(model_name, domain, data, path_list, test_options)
       model <- adjust_results(model, data)
 

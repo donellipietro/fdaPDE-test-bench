@@ -19,18 +19,18 @@ fit_model <- function(model_name, domain, data, path_list, test_options) {
     model_name,
     "SRPDE-FEM" = "fem",
     "SRPDE-SPLINES" = "spline",
-    stop(paste("The model", model_name, "does not exist"))
+    stop(glue::glue("The model {model_name} does not exist"))
   )
 
   ## Paths ----
-  prefix <- paste0("batch_", test_options$batch_index, "_", model_name)
-  locations_file <- file.path(path_list$tmp_data, paste0(prefix, "_locations.csv"))
-  response_file <- file.path(path_list$tmp_data, paste0(prefix, "_response.csv"))
-  evaluation_file <- file.path(path_list$tmp_data, paste0(prefix, "_evaluation.csv"))
-  prediction_file <- file.path(path_list$tmp_results, paste0(prefix, "_prediction.csv"))
-  telemetry_file <- file.path(path_list$tmp_results, paste0(prefix, "_telemetry.json"))
-  params_file <- file.path(path_list$tmp_data, paste0(prefix, "_params.json"))
-  log_file <- file.path(path_list$logs, paste0(test_options$name_test, "_", prefix, ".log"))
+  prefix <- glue::glue("batch_{test_options$batch_index}_{model_name}")
+  locations_file <- file.path(path_list$tmp_data, glue::glue("{prefix}_locations.csv"))
+  response_file <- file.path(path_list$tmp_data, glue::glue("{prefix}_response.csv"))
+  evaluation_file <- file.path(path_list$tmp_data, glue::glue("{prefix}_evaluation.csv"))
+  prediction_file <- file.path(path_list$tmp_results, glue::glue("{prefix}_prediction.csv"))
+  telemetry_file <- file.path(path_list$tmp_results, glue::glue("{prefix}_telemetry.json"))
+  params_file <- file.path(path_list$tmp_data, glue::glue("{prefix}_params.json"))
+  log_file <- file.path(path_list$logs, glue::glue("{test_options$name_test}_{prefix}.log"))
 
   ## Write paired data for the C++ driver ----
   write.csv(data.frame(x = data$locations[, 1]), locations_file, row.names = FALSE)
@@ -52,16 +52,25 @@ fit_model <- function(model_name, domain, data, path_list, test_options) {
   write_json(params, params_file, auto_unbox = TRUE, digits = NA, pretty = TRUE)
 
   ## Run the model-specific binary and measure its peak resident memory ----
-  binary <- file.path(path_list$cpp_script, paste0("fit_model_", solver_name))
-  command <- paste(shQuote(binary), shQuote(params_file), ">", shQuote(log_file), "2>&1")
+  binary <- file.path(path_list$cpp_script, glue::glue("fit_model_{solver_name}"))
+  command <- glue::glue(
+    "{shQuote(binary)} {shQuote(params_file)} > {shQuote(log_file)} 2>&1"
+  )
   run_stats <- system_with_memory(command, ignore.stdout = IGNORE_CPP_OUTPUT)
-  if (!identical(run_stats$status, 0L)) stop("C++ fit failed; see ", log_file)
-  if (!is.finite(run_stats$peak_ram_mib)) stop("peak RAM measurement unavailable for ", model_name)
+  if (!identical(run_stats$status, 0L)) {
+    stop(glue::glue("C++ fit failed; see {log_file}"))
+  }
+  if (!is.finite(run_stats$peak_ram_mib)) {
+    stop(glue::glue("peak RAM measurement unavailable for {model_name}"))
+  }
 
   ## Load and validate outputs ----
   telemetry <- fromJSON(telemetry_file)
   if (!identical(telemetry$discretization, solver_name)) {
-    stop("binary/model mismatch: requested ", model_name, " but driver reported ", telemetry$discretization)
+    stop(glue::glue(
+      "binary/model mismatch: requested {model_name} ",
+      "but driver reported {telemetry$discretization}"
+    ))
   }
   prediction <- read.csv(prediction_file, header = TRUE)[[1]]
   if (length(prediction) != length(data$truth_evaluation)) stop("prediction grid length mismatch")

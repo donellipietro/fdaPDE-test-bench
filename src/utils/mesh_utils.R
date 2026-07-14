@@ -14,11 +14,11 @@
 #   nodes, edges, elements, neigh, boundary.
 import_mesh_data <- function(path) {
   mesh_data <- list(
-    nodes    = as.matrix(read.csv(paste(path, "points.csv",   sep = ""))[, -1]),
-    edges    = as.matrix(read.csv(paste(path, "edges.csv",    sep = ""))[, -1]),
-    elements = as.matrix(read.csv(paste(path, "elements.csv", sep = ""))[, -1]),
-    neigh    = as.matrix(read.csv(paste(path, "neigh.csv",    sep = ""))[, -1]),
-    boundary = as.matrix(read.csv(paste(path, "boundary.csv", sep = ""))[, -1])
+    nodes    = as.matrix(read.csv(file.path(path, "points.csv"))[, -1]),
+    edges    = as.matrix(read.csv(file.path(path, "edges.csv"))[, -1]),
+    elements = as.matrix(read.csv(file.path(path, "elements.csv"))[, -1]),
+    neigh    = as.matrix(read.csv(file.path(path, "neigh.csv"))[, -1]),
+    boundary = as.matrix(read.csv(file.path(path, "boundary.csv"))[, -1])
   )
   return(mesh_data)
 }

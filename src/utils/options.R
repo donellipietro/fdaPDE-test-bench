@@ -50,7 +50,7 @@ explode_options <- function(options, by, formatters = NULL, name_fun = NULL) {
   ## Locate paths for each 'by' field and get their vectors
   paths <- lapply(by, function(nm) {
     res <- find_name_path(options, nm)
-    if (!isTRUE(res$found)) stop(sprintf("Field '%s' not found in options.", nm))
+    if (!isTRUE(res$found)) stop(glue::glue("Field '{nm}' not found in options."))
     res$path
   })
   names(paths) <- by
@@ -58,8 +58,8 @@ explode_options <- function(options, by, formatters = NULL, name_fun = NULL) {
   ## Extract values for each field in 'by'
   grids <- lapply(by, function(nm) {
     val <- get_by_path(options, paths[[nm]])
-    if (is.null(val)) stop(sprintf("Field '%s' is NULL.", nm))
-    if (!is.atomic(val)) stop(sprintf("Field '%s' must be an atomic vector for 'by'.", nm))
+    if (is.null(val)) stop(glue::glue("Field '{nm}' is NULL."))
+    if (!is.atomic(val)) stop(glue::glue("Field '{nm}' must be an atomic vector for 'by'."))
     val
   })
   names(grids) <- by
@@ -88,9 +88,9 @@ explode_options <- function(options, by, formatters = NULL, name_fun = NULL) {
         vv <- val
         if (!is.null(formatters) && !is.null(formatters[[nm]]))
           vv <- formatters[[nm]](vv)
-        paste0(nm, "_", as.character(vv))
+        glue::glue("{nm}_{as.character(vv)}")
       }, nm = by, val = as.list(comb[i, by, drop = FALSE]))
-      opt_i$name_test <- paste(unlist(parts), collapse = "_")
+      opt_i$name_test <- glue::glue_collapse(unlist(parts), sep = "_")
     }
 
     out[[i]] <- opt_i
@@ -116,7 +116,7 @@ write_options_json <- function(options_list, dir, name_field = "name_test",
     if (is.null(nm)) stop("Missing 'name_field' in one options element.")
     write_json(
       opt,
-      file.path(dir, paste0(nm, ".json")),
+      file.path(dir, glue::glue("{nm}.json")),
       pretty = pretty,
       auto_unbox = auto_unbox,
       digits = NA

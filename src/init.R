@@ -31,8 +31,8 @@ if (length(args) == 0) {
 
 ## Print selected test info
 cat("\n")
-cat(paste("Test suite:", test_suite, "\n"))
-cat(paste("Test name:", name_main_test, "\n"))
+cat(glue::glue("Test suite: {test_suite}\n", .trim = FALSE))
+cat(glue::glue("Test name: {name_main_test}\n", .trim = FALSE))
 cat("\n")
 
 path_test_suite <- file.path("tests", test_suite)
@@ -41,10 +41,10 @@ path_suite_config <- file.path(path_test_suite, "config.R")
 if (!dir.exists(path_test_suite) || !file.exists(path_generate_options)) {
   available_suites <- basename(list.dirs("tests", recursive = FALSE, full.names = TRUE))
   stop(
-    paste0(
-      "Unknown or incomplete test suite: ", test_suite, "\n",
-      "Expected option generator: ", path_generate_options, "\n",
-      "Available test suites: ", paste(sort(available_suites), collapse = ", ")
+    glue::glue(
+      "Unknown or incomplete test suite: {test_suite}\n",
+      "Expected option generator: {path_generate_options}\n",
+      "Available test suites: {glue::glue_collapse(sort(available_suites), sep = ', ')}"
     ),
     call. = FALSE
   )
@@ -67,7 +67,10 @@ source(path_generate_options)
 ## Generate all the options for the selected test(s)
 resolved_tests <- resolve_test_names(test_suite, name_main_test)
 if (length(resolved_tests) > 1 || !identical(resolved_tests, name_main_test)) {
-  cat("Resolved tests:", paste(resolved_tests, collapse = ", "), "\n\n")
+  cat(glue::glue(
+    "Resolved tests: {glue::glue_collapse(resolved_tests, sep = ', ')}\n\n",
+    .trim = FALSE
+  ))
 }
 
 for (test_name in resolved_tests) {

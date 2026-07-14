@@ -114,7 +114,7 @@ add_results <- function(data, new, groups_names = NULL) {
   
   ## Initialize the new data data.frame
   if (is.null(groups_names)) {
-    new_data <- data.frame(Group = paste(1:n))
+    new_data <- data.frame(Group = as.character(seq_len(n)))
   } else {
     new_data <- data.frame(Group = groups_names)
   }
@@ -180,7 +180,10 @@ extract_new_results <- function(results_evaluation, names_models, name_result) {
 #   aggregates them into structured data.frames, and returns a list
 #   ready for analysis and visualization.
 load_quantitative_results <- function(test_options, path_list) {
-  cat(paste0("\nLoading quantitative results for ", test_options$name_test, " ...\n"))
+  cat(glue::glue(
+    "\nLoading quantitative results for {test_options$name_test} ...\n",
+    .trim = FALSE
+  ))
   
   ## Get model names, labels, and colors
   model_names  <- test_options$model_names
@@ -195,11 +198,15 @@ load_quantitative_results <- function(test_options, path_list) {
   ## Load the first batch defensively
   batch_index <- 1
   ok <- tryCatch({
-    path_batch <- file.path(path_list$results, paste0("batch_", batch_index))
-    load(file.path(path_batch, paste0("batch_", batch_index, "_results_evaluation.RData")))
+    path_batch <- file.path(path_list$results, glue::glue("batch_{batch_index}"))
+    load(file.path(path_batch, glue::glue("batch_{batch_index}_results_evaluation.RData")))
     TRUE
   }, error = function(e) {
-    cat(sprintf("Error in test %s - batch %d: %s\n", test_options$name_test, batch_index, conditionMessage(e)))
+    cat(glue::glue(
+      "Error in test {test_options$name_test} - batch {batch_index}: ",
+      "{conditionMessage(e)}\n",
+      .trim = FALSE
+    ))
     FALSE
   })
   if (!ok) next
@@ -223,18 +230,25 @@ load_quantitative_results <- function(test_options, path_list) {
     
     ## Safely load batch file
     ok <- tryCatch({
-      path_batch <- file.path(path_list$results, paste0("batch_", batch_index))
-      load(file.path(path_batch, paste0("batch_", batch_index, "_results_evaluation.RData")))
+      path_batch <- file.path(path_list$results, glue::glue("batch_{batch_index}"))
+      load(file.path(path_batch, glue::glue("batch_{batch_index}_results_evaluation.RData")))
       TRUE
     }, error = function(e) {
-      cat(sprintf("Error in test %s - batch %d: %s\n", test_options$name_test, batch_index, conditionMessage(e)))
+      cat(glue::glue(
+        "Error in test {test_options$name_test} - batch {batch_index}: ",
+        "{conditionMessage(e)}\n",
+        .trim = FALSE
+      ))
       FALSE
     })
     if (!ok) next
     
     ## Check that results_evaluation exists
     if (!exists("results_evaluation", inherits = FALSE)) {
-      cat(sprintf("Warning: no `results_evaluation` found in batch %d file; skipping.\n", batch_index))
+      cat(glue::glue(
+        "Warning: no `results_evaluation` found in batch {batch_index} file; skipping.\n",
+        .trim = FALSE
+      ))
       next
     }
     
@@ -255,7 +269,7 @@ load_quantitative_results <- function(test_options, path_list) {
       }
     }
     
-    cat(sprintf("- Batch %d loaded\n", batch_index))
+    cat(glue::glue("- Batch {batch_index} loaded\n", .trim = FALSE))
   }
   
   cat("\n")
@@ -396,10 +410,13 @@ load_all_quantitiative_results <- function(path_list, name_main_test) {
     stop("No option files found in the queue for this test.")
   }
   
-  cat.script_title(paste("Results Loader —", TEST_SUITE))
+  cat.script_title(glue::glue("Results Loader — {TEST_SUITE}"))
   cat.section_title("Target")
-  cat(paste0("- Test: ", test_suite, "/", name_main_test, "\n"))
-  cat(paste0("- Options found: ", length(file_options_list), "\n\n"))
+  cat(glue::glue("- Test: {test_suite}/{name_main_test}\n", .trim = FALSE))
+  cat(glue::glue(
+    "- Options found: {length(file_options_list)}\n\n",
+    .trim = FALSE
+  ))
   
   ## Container for all loaded results
   all_results <- NULL
@@ -407,7 +424,7 @@ load_all_quantitiative_results <- function(path_list, name_main_test) {
   ## Iterate options and load quantitative results
   for (file_options in file_options_list) {  # file_options <- file_options_list[1]
     ## Load option JSON
-    test_options <- jsonlite::fromJSON(paste0(path_list$queue, file_options))
+    test_options <- jsonlite::fromJSON(file.path(path_list$queue, file_options))
     
     ## Update paths for this specific option (so load_quantitative_results finds batches)
     path_list_i <- update_paths(path_list, name_main_test, test_options)
@@ -434,7 +451,7 @@ load_all_quantitiative_results <- function(path_list, name_main_test) {
     }
     
     ## Optional: keep the queue clean, mirroring previous workflow
-    file.remove(paste0(path_list$queue, file_options))
+    file.remove(file.path(path_list$queue, file_options))
   }
   
   return(all_results)

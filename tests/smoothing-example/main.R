@@ -40,19 +40,25 @@ test_options <- fromJSON(queue_file, simplifyVector = TRUE)
 path_list <- update_paths(path_list, name_main_test, test_options)
 
 ## Recursive fit ----
-cat("- Running:", test_suite, "/", test_options$name_test, "\n")
+cat(glue::glue(
+  "- Running: {test_suite} / {test_options$name_test}\n",
+  .trim = FALSE
+))
 for (batch_index in seq_len(test_options$test_options$n_reps)) {
-  cat("- Batch", batch_index, "of", test_options$test_options$n_reps, "\n")
+  cat(glue::glue(
+    "- Batch {batch_index} of {test_options$test_options$n_reps}\n",
+    .trim = FALSE
+  ))
 
   ## Create the standard batch directory
-  path_list$batch <- config_path(path_list$results, paste0("batch_", batch_index))
+  path_list$batch <- config_path(path_list$results, glue::glue("batch_{batch_index}"))
   mkdir(path_list$batch)
 
   ## Generate paired FEM/spline data with a distinct repetition seed
   seed <- test_options$noise$seed + batch_index
   data <- generate_smoothing_data(test_options, seed)
   if (batch_index == 1L) {
-    save(data, file = file.path(path_list$data, paste0(test_options$name_test, ".RData")))
+    save(data, file = file.path(path_list$data, glue::glue("{test_options$name_test}.RData")))
   }
 
   ## Fit, adjust, evaluate, and save both models using template utilities

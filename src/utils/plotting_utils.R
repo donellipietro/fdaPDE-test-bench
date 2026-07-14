@@ -185,7 +185,7 @@ as_curve_matrix <- function(locations, obj, prefix = "curve") {
     })
     M <- do.call(cbind, cols)
     cn <- names(obj)
-    if (is.null(cn)) cn <- paste0(prefix, seq_len(ncol(M)))
+    if (is.null(cn)) cn <- glue::glue("{prefix}{seq_len(ncol(M))}")
     colnames(M) <- cn
     return(M)
   }
@@ -203,7 +203,7 @@ as_curve_matrix <- function(locations, obj, prefix = "curve") {
       stop("'f' (matrix) must have nrow equal to length(locations).")
     M <- obj
     if (is.null(colnames(M)))
-      colnames(M) <- paste0(prefix, seq_len(ncol(M)))
+      colnames(M) <- glue::glue("{prefix}{seq_len(ncol(M))}")
     return(M)
   }
   
@@ -850,11 +850,10 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
     data_plot <- data_plot_orig[data_plot_orig$Group == group, ]
     
     ## Generate title
-    title <- paste(
-      title_prefix,
-      name_varying_options[1],
-      ifelse(length(groups) > 1, paste0("- ", group), "")
-    )
+    group_suffix <- if (length(groups) > 1) glue::glue("- {group}") else ""
+    title <- trimws(glue::glue(
+      "{title_prefix} {name_varying_options[1]} {group_suffix}"
+    ))
     
     ## Rooms for plots
     boxplot_list <- list()
@@ -881,8 +880,12 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
       combinations_options <- do.call(data.frame, lapply(mg, as.vector))
       colnames(combinations_options) <- names_options_selected
       
-      labels_rows <- if (length(labels_options_selected) >= 1) paste(labels_options_selected[1], "=", options_grid_selected[[1]]) else ""
-      labels_cols <- if (length(labels_options_selected) >= 2) paste(labels_options_selected[2], "=", options_grid_selected[[2]]) else ""
+      labels_rows <- if (length(labels_options_selected) >= 1) {
+        glue::glue("{labels_options_selected[1]} = {options_grid_selected[[1]]}")
+      } else ""
+      labels_cols <- if (length(labels_options_selected) >= 2) {
+        glue::glue("{labels_options_selected[2]} = {options_grid_selected[[2]]}")
+      } else ""
     }
     
     for (j in 1:nrow(combinations_options)) {  # j <- 1

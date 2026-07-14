@@ -26,6 +26,10 @@ cat("R library paths:\n")
 print(.libPaths())
 cat("CRAN mirror:", getOption("repos")[["CRAN"]], "\n")
 
+if (!requireNamespace("glue", quietly = TRUE)) {
+  install.packages("glue", lib = install_lib)
+}
+
 if (requireNamespace("femR", quietly = TRUE)) {
   cat("The package femR is already installed\n")
   quit(save = "no", status = 0)

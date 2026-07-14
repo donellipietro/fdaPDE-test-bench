@@ -71,7 +71,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
 
       ## File naming policy: include the varying observation count
       name_fun <- function(opts_i, comb_row) {
-        paste(name_main_test, "nl", sprintf("%04d", comb_row$n_locs), sep = "_")
+        glue::glue("{name_main_test}_nl_{sprintf('%04d', comb_row$n_locs)}")
       }
 
       ## Expand only n_locs, then write one JSON file per level
@@ -115,7 +115,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
 
       ## File naming policy: include the varying mesh/basis resolution
       name_fun <- function(opts_i, comb_row) {
-        paste(name_main_test, "nn", sprintf("%04d", comb_row$n_nodes), sep = "_")
+        glue::glue("{name_main_test}_nn_{sprintf('%04d', comb_row$n_nodes)}")
       }
 
       ## Expand only n_nodes, then write one JSON file per level
@@ -159,7 +159,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
 
       ## File naming policy: include the varying signal-to-noise ratio
       name_fun <- function(opts_i, comb_row) {
-        paste(name_main_test, "snr", sprintf("%.1f", comb_row$SNR), sep = "_")
+        glue::glue("{name_main_test}_snr_{sprintf('%.1f', comb_row$SNR)}")
       }
 
       ## Expand only SNR, then write one JSON file per level
@@ -171,7 +171,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       write_options_json(options_list, dir = path_queue, name_field = "name_test")
     },
     {
-      stop(paste("The test", name_main_test, "does not exist"))
+      stop(glue::glue("The test {name_main_test} does not exist"))
     }
   )
 }

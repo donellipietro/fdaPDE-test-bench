@@ -12,5 +12,5 @@ if (length(args) < 2) {
 
 test_suite <- args[1]
 name_main_test <- args[-1]
-cat(paste(resolve_test_names(test_suite, name_main_test), collapse = "\n"))
+cat(glue::glue_collapse(resolve_test_names(test_suite, name_main_test), sep = "\n"))
 cat("\n")

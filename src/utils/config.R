@@ -3,6 +3,7 @@
 # - Desc: Helpers for reading repository profiles and exporting shell env files.
 # = ========================================================================== =
 
+# Make sources these helpers before installing runtime dependencies.
 
 # Helpers ----
 

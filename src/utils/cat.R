@@ -14,9 +14,9 @@ cat.script_title <- function(title) {
   len <- nchar(title)
   spacer <- strrep("%", len)
   
-  cat(paste("\n%%%", spacer, "%%%", sep = ""))
-  cat(paste("\n%% ", title, " %%", sep = ""))
-  cat(paste("\n%%%", spacer, "%%%\n\n", sep = ""))
+  cat(glue::glue("\n%%%{spacer}%%%", .trim = FALSE))
+  cat(glue::glue("\n%% {title} %%", .trim = FALSE))
+  cat(glue::glue("\n%%%{spacer}%%%\n\n", .trim = FALSE))
 }
 
 
@@ -30,9 +30,9 @@ cat.section_title <- function(title) {
   len <- nchar(title)
   spacer <- strrep("|", len)
   
-  cat(paste("\n|||", spacer, "|||", sep = ""))
-  cat(paste("\n|| ", title, " ||", sep = ""))
-  cat(paste("\n|||", spacer, "|||\n\n", sep = ""))
+  cat(glue::glue("\n|||{spacer}|||", .trim = FALSE))
+  cat(glue::glue("\n|| {title} ||", .trim = FALSE))
+  cat(glue::glue("\n|||{spacer}|||\n\n", .trim = FALSE))
 }
 
 
@@ -42,7 +42,7 @@ cat.section_title <- function(title) {
 # - Desc:
 #   Prints a simple subsection title prefixed by a single '#'.
 cat.subsection_title <- function(title) {
-  cat(paste("\n# ", title, "\n\n", sep = ""))
+  cat(glue::glue("\n# {title}\n\n", .trim = FALSE))
 }
 
 
@@ -60,14 +60,14 @@ cat.json <- function(json_obj, indent = 0) {
       cat("\n")
       keys <- names(json_obj)
       for (key in keys) {
-        cat(paste(rep(" ", indent_level * indent), collapse = ""))
-        cat(sprintf("- %s : ", key))
+        cat(strrep(" ", indent_level * indent))
+        cat(glue::glue("- {key} : "))
         printRecursive(json_obj[[key]], indent_level + 1)
         cat("\n")
       }
-      cat(paste(rep(" ", (indent_level - 1) * indent), collapse = ""))
+      cat(strrep(" ", (indent_level - 1) * indent))
     } else if (is.atomic(json_obj)) {
-      cat(sprintf("%s", json_obj))
+      cat(glue::glue("{json_obj}"))
     }
   }
   

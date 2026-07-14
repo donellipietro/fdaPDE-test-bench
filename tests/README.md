@@ -54,6 +54,14 @@ scripts.
 Use `tests/<suite>/config.R` for suite names, default test names, and local run
 flags. Use the root `config.R` for machine paths and execution strategy.
 
+## R String Construction
+
+Use `glue::glue()` for scalar interpolation in messages, identifiers, and file
+names, and `glue::glue_collapse()` when joining a character vector. Use
+`file.path()` or `config_path()` for paths and retain `sprintf()` only for
+fixed-width numeric formatting inside `glue`. Root configuration stays base R
+because Make evaluates it before runtime dependencies are installed.
+
 ## Smoke Tests
 
 `SMOKE_TEST=1` is passed by `make run_test` into `src/init.R`, `main.R`, and

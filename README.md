@@ -116,7 +116,7 @@ prediction, and CPU times.
 
 The `Makefile` provided in this repository includes several targets to automate common tasks related to installation, testing, building, and cleaning up the project environment. Below is a brief description of each target:
 
-- `install_femR`: Installs the `femR` package by executing the `install_femR.R` script located in the `src/installation/` directory.
+- `install_femR`: Installs the `glue` and `femR` packages through `src/installation/install_femR.R`.
 - `install`: Installs repository R dependencies.
 - `build`: Writes `.env`, creates generated directories, and installs dependencies.
 - `compile`: Compiles one model using the profile compile strategy.

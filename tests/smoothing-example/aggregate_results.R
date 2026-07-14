@@ -74,7 +74,7 @@ for (family in families) {
   ## Load all standard batch evaluation files for this family
   loaded <- load_all_quantitiative_results(path_list, family)
   if (!identical(loaded$varying_options, varying_option)) {
-    stop("generated and loaded varying options do not match for ", family)
+    stop(glue::glue("generated and loaded varying options do not match for {family}"))
   }
 
   ## Recover dimensions directly from the generated option JSON
@@ -87,7 +87,7 @@ for (family in families) {
 
   ## Flatten the shared loaded structure into one row per model fit
   for (model_name in loaded$model_names) {
-    all_rows[[paste(family, model_name)]] <- data.frame(
+    all_rows[[glue::glue("{family} {model_name}")]] <- data.frame(
       family = family,
       level = level,
       repetition = repetition,
@@ -171,7 +171,7 @@ for (family in families) {
   )
   for (output_name in names(plot_outputs)) {
     plot_specs <- plot_outputs[[output_name]]
-    pdf(file.path(image_dir, paste0(output_name, ".pdf")), width = 10, height = 7)
+    pdf(file.path(image_dir, glue::glue("{output_name}.pdf")), width = 10, height = 7)
     for (i in seq_along(plot_specs)) {
       if (i > 1L) grid::grid.newpage()
       plot_spec <- plot_specs[[i]]
@@ -189,7 +189,7 @@ for (family in families) {
     dev.off()
   }
 
-  saveRDS(loaded, file.path(aggregate_dir, paste0("loaded_", family, ".rds")))
+  saveRDS(loaded, file.path(aggregate_dir, glue::glue("loaded_{family}.rds")))
 }
 
 ## Validate flattened telemetry ----
@@ -267,4 +267,7 @@ summary <- do.call(rbind, lapply(split_results, function(x) {
 write.csv(results, file.path(aggregate_dir, "all_metrics.csv"), row.names = FALSE)
 write.csv(summary, file.path(aggregate_dir, "summary.csv"), row.names = FALSE)
 write.csv(completeness, file.path(aggregate_dir, "completeness.csv"), row.names = FALSE)
-cat("Validated", nrow(results), "fit rows across", nrow(completeness), "complete cells.\n")
+cat(glue::glue(
+  "Validated {nrow(results)} fit rows across {nrow(completeness)} complete cells.\n",
+  .trim = FALSE
+))

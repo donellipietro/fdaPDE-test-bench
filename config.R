@@ -3,6 +3,7 @@
 # - Desc: Editable runtime profiles for this repository.
 # = ========================================================================== =
 
+# Make evaluates configuration before install, so this entry point stays base R only.
 source("src/utils/config.R")
 
 
