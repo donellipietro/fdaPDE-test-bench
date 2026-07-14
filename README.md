@@ -43,7 +43,7 @@ To run tests using the provided utilities, follow these steps:
    refresh the ignored repository-local `libraries/fdaPDE-cpp` clone from the
    configured remote `FDAPDE_CPP_REPOSITORY`, then initialize `fdaPDE/core` at
    the selected branch's recorded gitlink.
-   Compile both drivers against that stack:
+   Drivers can also be compiled explicitly against that stack:
 
    ```bash
    make compile MODEL=smoothing-example TARGET=fit_model_fem
@@ -62,6 +62,9 @@ To run tests using the provided utilities, follow these steps:
    ```bash
    make run_test TEST_SUITE=smoothing-example TEST_NAME=all
    ```
+
+   `run_test` first invokes the standard `compile` target with `MODEL` set to
+   the selected `TEST_SUITE`, compiling all C++ mains for that suite.
 
 Profiles can set `TEST_EXECUTION_STRATEGY` to `serial`, `parallel`, or `slurm`,
 and `COMPILE_STRATEGY` to `local` or `slurm`.

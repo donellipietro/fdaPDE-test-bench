@@ -243,6 +243,10 @@ distclean: clean clean_compiled
 
 ## Run all the batches of a test with the active profile strategy
 # usage: make run_test TEST_SUITE=centering TEST_NAME=test1
+ifneq ($(strip $(TEST_SUITE)),)
+run_test: MODEL := $(TEST_SUITE)
+run_test: compile
+endif
 run_test: ensure_env
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
 		echo ""; \

@@ -7,6 +7,9 @@ Makefile:
 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```
 
+Before execution, `run_test` invokes the standard `compile` target with the
+test suite as its model directory.
+
 `make run_test` uses the active profile from `config.R`: `serial`, `parallel`,
 or `slurm`.
 
