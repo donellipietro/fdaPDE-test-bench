@@ -39,22 +39,31 @@ queue_file <- file.path(path_list$queue, file_options)
 test_options <- fromJSON(queue_file, simplifyVector = TRUE)
 path_list <- update_paths(path_list, name_main_test, test_options)
 
-## Recursive fit ----
-cat(glue::glue(
+## Log file ----
+run_message <- glue::glue(
   "- Running: {test_suite} / {test_options$name_test}\n",
   .trim = FALSE
-))
+)
+cat(run_message)
+sink(file.path(path_list$logs, "log.txt"), append = TRUE)
+cat(run_message)
+sink()
+sink(
+  file.path(path_list$logs, glue::glue("log_{test_options$name_test}.txt")),
+  append = TRUE
+)
+cat(run_message)
+
+## Recursive fit ----
 for (batch_index in seq_len(test_options$test_options$n_reps)) {
-  cat(glue::glue(
-    "- Batch {batch_index} of {test_options$test_options$n_reps}\n",
-    .trim = FALSE
-  ))
+  cat(glue::glue("\nBatch {batch_index}:\n", .trim = FALSE))
 
   ## Create the standard batch directory
   path_list$batch <- config_path(path_list$results, glue::glue("batch_{batch_index}"))
   mkdir(path_list$batch)
 
   ## Generate paired FEM/spline data with a distinct repetition seed
+  cat("- Generate data\n")
   seed <- test_options$noise$seed + batch_index
   data <- generate_smoothing_data(test_options, seed)
   if (batch_index == 1L) {
@@ -62,6 +71,7 @@ for (batch_index in seq_len(test_options$test_options$n_reps)) {
   }
 
   ## Fit, adjust, evaluate, and save both models using template utilities
+  cat("- Fit models\n")
   test_options$batch_index <- batch_index
   fit_and_evaluate_models(
     path_list = path_list,
@@ -72,5 +82,6 @@ for (batch_index in seq_len(test_options$test_options$n_reps)) {
   )
 }
 
-## Remove the processed option from the queue ----
+## Test finalization ----
 unlink(queue_file)
+sink()

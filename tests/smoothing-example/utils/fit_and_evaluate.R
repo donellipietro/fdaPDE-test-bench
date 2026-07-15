@@ -34,7 +34,7 @@ fit_and_evaluate_models <- function(path_list, data, domain, batch_index, test_o
       load(model_file)
       model <- get(object_name)
     } else {
-      cat(glue::glue("  fitting {model_name}\n", .trim = FALSE))
+      cat(glue::glue("- Fitting model: {model_name} ... ", .trim = FALSE))
       model <- fit_model(model_name, domain, data, path_list, test_options)
       model <- adjust_results(model, data)
 
@@ -49,5 +49,5 @@ fit_and_evaluate_models <- function(path_list, data, domain, batch_index, test_o
 
   ## Save the standard batch evaluation object ----
   save(index_batch = batch_index, results_evaluation, file = evaluation_file)
-  cat("  batch complete\n")
+  cat(glue::glue("- Batch {batch_index} completed.\n", .trim = FALSE))
 }

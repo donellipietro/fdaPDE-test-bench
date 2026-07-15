@@ -10,37 +10,9 @@ make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 Before execution, `run_test` invokes the standard `compile` target with the
 test suite as its model directory.
 
-`make run_test` uses the active profile from `config.R`: `serial`, `parallel`,
-or `slurm`.
-
-## HPC/Slurm Review Run
-
-From a fresh clone, load Apptainer or SingularityCE plus host R and Slurm, then
-run:
-
-```bash
-make build PROFILE=hpc-slurm
-SMOKE_TEST=1 make run_test PROFILE=hpc-slurm TEST_SUITE=smoothing-example TEST_NAME=all
-```
-
-The build creates ignored dependencies under `libraries/`, including
-`fdapde-docker-latest.sif`, `fdaPDE-cpp`, `nlohmann-json`, and, when
-`R_LIBS_USER` is unset, `R`. The SIF supplies the C++ compiler, Eigen, and
-Ipopt; `cpp/run.sh` also executes each fitted C++ binary in that image.
-R configuration, test orchestration, aggregation, plotting, and `sbatch`
-remain host operations.
-
-The local SIF is reused and is never refreshed silently. Remove it to pull the
-configured source again, or override `SINGULARITY_IMAGE_SOURCE` with an
-immutable digest URI. If `apptainer` and `singularity` are both missing, load
-the site module. If registry access is unavailable, copy a prepared SIF to the
-configured path before building. A fully offline build also requires the JSON
-and fdaPDE clones and R library to be pre-staged under `libraries/`. For a
-submission-only check, use:
-
-```bash
-SLURM_DRY_RUN=1 make run_test PROFILE=hpc-slurm TEST_SUITE=smoothing-example TEST_NAME=all
-```
+`make run_test` uses the environment selected by the most recent
+`make build PROFILE=<profile>`. See the root README for profile prerequisites
+and setup commands.
 
 ## Suite Layout
 
@@ -69,7 +41,8 @@ scripts.
 ## Bundled Suites
 
 - `smoothing-example`: paired 1D SRPDE FEM/spline experiments following the
-  template batch/wrapper/evaluation flow, with peak RAM recorded in MiB.
+  template batch/wrapper/evaluation flow, with peak RAM recorded in MiB; see
+  [`smoothing-example/README.md`](smoothing-example/README.md).
 - `template_base`: copy this when starting a new suite, then fill in the
   placeholders.
 
@@ -85,14 +58,6 @@ scripts.
 
 Use `tests/<suite>/config.R` for suite names, default test names, and local run
 flags. Use the root `config.R` for machine paths and execution strategy.
-
-## R String Construction
-
-Use `glue::glue()` for scalar interpolation in messages, identifiers, and file
-names, and `glue::glue_collapse()` when joining a character vector. Use
-`file.path()` or `config_path()` for paths and retain `sprintf()` only for
-fixed-width numeric formatting inside `glue`. Root configuration stays base R
-because Make evaluates it before runtime dependencies are installed.
 
 ## Smoke Tests
 

@@ -30,7 +30,7 @@ fit_model <- function(model_name, domain, data, path_list, test_options) {
   prediction_file <- file.path(path_list$tmp_results, glue::glue("{prefix}_prediction.csv"))
   telemetry_file <- file.path(path_list$tmp_results, glue::glue("{prefix}_telemetry.json"))
   params_file <- file.path(path_list$tmp_data, glue::glue("{prefix}_params.json"))
-  log_file <- file.path(path_list$logs, glue::glue("{test_options$name_test}_{prefix}.log"))
+  log_file <- file.path(path_list$logs, glue::glue("log_{test_options$name_test}.txt"))
 
   ## Write paired data for the C++ driver ----
   write.csv(data.frame(x = data$locations[, 1]), locations_file, row.names = FALSE)
@@ -56,12 +56,17 @@ fit_model <- function(model_name, domain, data, path_list, test_options) {
   runner <- file.path(path_list$repo, "cpp", "run.sh")
   command <- glue::glue(
     "{shQuote(runner)} --quiet -- {shQuote(binary)} {shQuote(params_file)} ",
-    "> {shQuote(log_file)} 2>&1"
+    ">> {shQuote(log_file)} 2>&1"
   )
   run_stats <- system_with_memory(command, ignore.stdout = IGNORE_CPP_OUTPUT)
   if (!identical(run_stats$status, 0L)) {
     stop(glue::glue("C++ fit failed; see {log_file}"))
   }
+  cat(glue::glue(
+    "finished after {run_stats$execution_time} ",
+    "{attr(run_stats$execution_time, 'units')}\n",
+    .trim = FALSE
+  ))
   if (!is.finite(run_stats$peak_ram_mib)) {
     stop(glue::glue("peak RAM measurement unavailable for {model_name}"))
   }
