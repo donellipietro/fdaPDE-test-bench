@@ -53,13 +53,13 @@ fit_and_evaluate_models <- function(path_list,
     
     ## Fit the model only if necessary (no fit found or fit is forced)
     if (file.exists(file_model) && !FORCE_FIT) {
-      if (FORCE_EVALUATE) {
-        cat(glue::glue(
-          "- Loading fitted model: {model_name}...\n",
-          .trim = FALSE
-        ))
-        load(file_model)
-      }
+      cat(glue::glue(
+        "- Loading fitted model: {model_name}...\n",
+        .trim = FALSE
+      ))
+      object_name <- glue::glue("model_{model_name}")
+      load(file_model)
+      model <- get(object_name)
     } else {
       cat(glue::glue("- Fitting model: {model_name}... "))
       

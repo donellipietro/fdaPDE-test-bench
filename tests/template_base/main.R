@@ -159,6 +159,45 @@ cat.script_title(glue::glue("Test: {TEST_SUITE}"))
 cat.section_title("Options")
 cat.json(test_options)
 
+batch_data_signature <- function(test_options, seed) {
+  list(
+    dimensions = test_options$dimensions,
+    data = test_options$data,
+    noise = test_options$noise,
+    seed = seed
+  )
+}
+
+batch_run_signature <- function(test_options, seed) {
+  test_options$batch_index <- NULL
+  list(
+    options = test_options,
+    seed = seed
+  )
+}
+
+same_signature <- function(left, right) {
+  isTRUE(all.equal(left, right, check.attributes = TRUE))
+}
+
+annotate_cached_data <- function(data, test_options, seed) {
+  attr(data, "testbench_cache") <- list(
+    data_signature = batch_data_signature(test_options, seed),
+    run_signature = batch_run_signature(test_options, seed)
+  )
+  data
+}
+
+read_cached_data <- function(file) {
+  if (!file.exists(file)) return(NULL)
+  readRDS(file)
+}
+
+cached_data_matches <- function(data, signature_name, signature) {
+  cache <- attr(data, "testbench_cache", exact = TRUE)
+  !is.null(cache) && same_signature(cache[[signature_name]], signature)
+}
+
 
 ## Load domain and locations ----
 
@@ -194,29 +233,45 @@ if (RUN$tests) {
     path_list$batch <- config_path(path_list$results, glue::glue("batch_{batch_idx}"))
     mkdir(path_list$batch)
     
-    ### Generate data ----
-    cat("- Generate data\n")
-    
-    ## File names where the results should be found
+    ## File names where cached data and results should be found
+    seed <- 4 * batch_idx + test_options$noise$seed
+    data_file <- file.path(path_list$batch, "generated_data.rds")
+    evaluation_file <- file.path(
+      path_list$batch,
+      glue::glue("batch_{batch_idx}_results_evaluation.RData")
+    )
     file_model_vect <- file.path(
       path_list$batch,
       glue::glue("batch_{batch_idx}_fitted_model_{test_options$model_names}.RData")
     )
-    
-    ## Generate data only if necessary (no fit found of fit is forced)
-    if (any(!file.exists(file_model_vect)) || FORCE_FIT || FORCE_EVALUATE) {
+    data_signature <- batch_data_signature(test_options, seed)
+    run_signature <- batch_run_signature(test_options, seed)
+    data <- read_cached_data(data_file)
+    if (!FORCE_FIT && !FORCE_EVALUATE &&
+        all(file.exists(c(evaluation_file, file_model_vect))) &&
+        cached_data_matches(data, "run_signature", run_signature)) {
+      cat("- Existing complete batch; skipped\n")
+      next
+    }
+
+    ## Generate data only if necessary, or reuse matching cached data
+    if (!FORCE_FIT && cached_data_matches(data, "data_signature", data_signature)) {
+      cat("- Load generated data\n")
+    } else {
+      cat("- Generate data\n")
       data <- generate_data(
         domain = domain, locations = locations,
         test_options = test_options,
         ## ....
-        seed = 4 * batch_idx + test_options$noise$seed
+        seed = seed
       )
+      data <- annotate_cached_data(data, test_options, seed)
+      saveRDS(data, data_file)
+
       ## Save data for qualitative results analysis
       if (batch_idx == 1) {
         save(data, file = file.path(path_list$data, glue::glue("{test_options$name_test}.RData")))
       }
-    } else {
-      cat("Skipped, data are not necessary!\n")
     }
     
     ## Fit and evaluation ----

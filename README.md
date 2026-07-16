@@ -4,11 +4,11 @@
 
 This repository serves as a test bench specifically designed for evaluating methods related to [fdaPDE](https://fdapde.github.io) (Physics-Informed Spatial and Functional Data Analysis). It provides a collection of utilities and scripts to facilitate the testing process, including model evaluation metrics computation, plot generation, and automation of tests with various parameter configurations.
 
-## Features
+## Capabilities
 
-- **Model Evaluation Metrics:** Utilities are available for computing various model evaluation metrics (`RMSE`, `IRMSE`, `...`), allowing for comprehensive assessment of fdaPDE methods' performance.
-- **Plot Generation:** The repository includes tools for generating plots to visualize the results of the tested methods, aiding in the interpretation and analysis of the experimental outcomes.
-- **Test Automation:** Scripts are provided for serial, local parallel, and Slurm execution. The active profile selects the default strategy.
+See [`docs/testbench-capabilities.md`](docs/testbench-capabilities.md) for the
+full functionality map, including suite lifecycle, caching, plotting utilities,
+ParaView palettes, and generated outputs.
 
 ## Repository Structure
 
