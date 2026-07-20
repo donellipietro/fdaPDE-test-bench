@@ -107,7 +107,7 @@ for TEST_INDEX in "${!RESOLVED_TEST_NAMES[@]}"; do
       -e "s|@SMOKE_TEST@|${SMOKE_TEST:-0}|g" \
       tests/pbs_job.template > "${JOB_SCRIPT}"
 
-    QSUB_ARGS=(-N "${JOB_NAME}" -o "${LOG_DIR}/${JOB_NAME}.out" -e "${LOG_DIR}/${JOB_NAME}.err")
+    QSUB_ARGS=(-V -N "${JOB_NAME}" -o "${LOG_DIR}/${JOB_NAME}.out" -e "${LOG_DIR}/${JOB_NAME}.err")
     QSUB_ARGS+=(-l "walltime=${TIME}" -l "nodes=1:ppn=${CPUS}" -l "mem=${MEM}")
     [[ -n "${PBS_QUEUE:-}" ]] && QSUB_ARGS+=(-q "${PBS_QUEUE}")
     [[ -n "${PBS_ACCOUNT:-}" ]] && QSUB_ARGS+=(-A "${PBS_ACCOUNT}")
@@ -127,7 +127,7 @@ if is_truthy "${PBS_AGGREGATE:-1}"; then
     -e "s|@TEST_SUITE@|${TEST_SUITE}|g" \
     -e "s|@TEST_NAME@|${TEST_NAME}|g" \
     tests/pbs_aggregate.template > "${AGG_SCRIPT}"
-  AGG_ID="$(qsub_job "${AGG_SCRIPT}" -N "$(safe_name "tb_agg_${TEST_SUITE}")" \
+  AGG_ID="$(qsub_job "${AGG_SCRIPT}" -V -N "$(safe_name "tb_agg_${TEST_SUITE}")" \
     -o "${LOG_DIR}/aggregate.out" -e "${LOG_DIR}/aggregate.err" \
     -l "walltime=${PBS_TIME:-${DEFAULT_TIME:-04:00:00}}" -l nodes=1:ppn=1 \
     -l "mem=${PBS_MEM:-${DEFAULT_MEM:-8gb}}" -W "depend=afterok:${DEPENDENCIES}" | tail -n 1)"
