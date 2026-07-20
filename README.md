@@ -177,8 +177,8 @@ SLURM_DRY_RUN=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 
 The `hpc-torque` profile targets Torque/PBS clusters such as DMAT's KAMI. It
 submits both compilation and test configurations with `qsub`. By default, ordinary workers use
-one CPU, 8 GB, and four hours. Multi-threaded tests request one complete CPU
-node (96 CPUs and 512 GB). At most 15 worker jobs are submitted; configurations
+one CPU, 8 GB, and four hours. Multi-threaded tests use 20 CPUs and 32 GB for
+12 hours by default. At most 15 worker jobs are submitted; configurations
 are distributed across them and run sequentially within each worker.
 
 ```bash
@@ -200,7 +200,7 @@ without scheduling jobs with:
 PBS_DRY_RUN=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```
 
-Compilation requests can be tuned with `PBS_COMPILE_CPUS`,
+Compilation defaults to 4 CPUs, 16 GB, and four hours. It can be tuned with `PBS_COMPILE_CPUS`,
 `PBS_COMPILE_MEM`, `PBS_COMPILE_TIME`, and `PBS_COMPILE_JOBS`. Use
 `PBS_COMPILE_DRY_RUN=1 make compile_all` to preview the compile submission.
 
