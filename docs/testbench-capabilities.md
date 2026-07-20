@@ -7,9 +7,9 @@ For setup details and machine profiles, start from the root
 
 ## Runtime And Build
 
-- **Runtime profiles:** `macbook`, `windows`, and `hpc-slurm` profiles in
+- **Runtime profiles:** `macbook`, `windows`, `hpc-slurm`, and `hpc-torque` profiles in
   `config.R` configure paths, dependency management, compilation strategy, test
-  execution strategy, containers, and Slurm defaults.
+  execution strategy, containers, and scheduler defaults.
 - **Dependency preparation:** `make build PROFILE=<profile>` creates the
   generated directory tree, writes `.env`, installs required R packages, prepares
   nlohmann/json, optionally pulls Docker/Apptainer images, and prepares a
@@ -19,7 +19,8 @@ For setup details and machine profiles, start from the root
   `make compile_all` builds every driver under `cpp/`. Compilation can run
   locally or through Slurm according to the active profile.
 - **Execution strategies:** `make run_test` can run option files serially,
-  through GNU Parallel, or through Slurm arrays. `SMOKE_TEST=1` lets suites
+  through GNU Parallel, through Slurm arrays, or as batched PBS jobs.
+  `SMOKE_TEST=1` lets suites
   shrink grids/repetitions for quick checks.
 
 ## Suite Lifecycle

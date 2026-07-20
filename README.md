@@ -57,7 +57,7 @@ again to apply the changes.
 
 Important fields are:
 
-- `TEST_EXECUTION_STRATEGY`: `serial`, `parallel`, or `slurm`;
+- `TEST_EXECUTION_STRATEGY`: `serial`, `parallel`, `slurm`, or `pbs`;
 - `COMPILE_STRATEGY`: `local` or `slurm`;
 - `TESTBENCH_OUTPUT`: optional generated-output root;
 - `FDAPDE_CPP_REPOSITORY`, `FDAPDE_CPP_BRANCH`, and `PATH_FDAPDE_CPP`;
@@ -172,6 +172,35 @@ Inspect compile and test submissions without scheduling jobs with:
 ```bash
 SLURM_DRY_RUN=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```
+
+### HPC/Torque: `hpc-torque`
+
+The `hpc-torque` profile targets Torque/PBS clusters such as DMAT's KAMI. It
+compiles on the host and submits test configurations with `qsub`. By default, ordinary workers use
+one CPU, 8 GB, and four hours. Multi-threaded tests request one complete CPU
+node (96 CPUs and 512 GB). At most 15 worker jobs are submitted; configurations
+are distributed across them and run sequentially within each worker.
+
+```bash
+make build PROFILE=hpc-torque
+make run_test TEST_SUITE=smoothing-example TEST_NAME=all
+```
+
+The profile assumes host R, a C++20 compiler, Eigen, and any solver libraries
+needed by the suite. Override paths during the build when the cluster's installations
+differ, for example `TESTBENCH_PATH_EIGEN_INCLUDE=/path/to/eigen3`.
+
+Resource requests can be overridden per run with `PBS_CPUS`, `PBS_MEM`,
+`PBS_TIME`, their `PBS_MULTI_*` counterparts, and `PBS_MAX_JOBS`. Optional
+`PBS_QUEUE` and `PBS_ACCOUNT` values are passed to `qsub`. Preview submissions
+without scheduling jobs with:
+
+```bash
+PBS_DRY_RUN=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
+```
+
+The GPU node is intentionally not configured because its PBS resource syntax
+has not yet been established.
 
 ## Test Suites
 
