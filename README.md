@@ -58,7 +58,7 @@ again to apply the changes.
 Important fields are:
 
 - `TEST_EXECUTION_STRATEGY`: `serial`, `parallel`, `slurm`, or `pbs`;
-- `COMPILE_STRATEGY`: `local` or `slurm`;
+- `COMPILE_STRATEGY`: `local`, `slurm`, or `pbs`;
 - `TESTBENCH_OUTPUT`: optional generated-output root;
 - `FDAPDE_CPP_REPOSITORY`, `FDAPDE_CPP_BRANCH`, and `PATH_FDAPDE_CPP`;
 - `FDAPDE_CPP_MANAGED`: whether the testbench may clone, fetch, and check out
@@ -176,7 +176,7 @@ SLURM_DRY_RUN=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ### HPC/Torque: `hpc-torque`
 
 The `hpc-torque` profile targets Torque/PBS clusters such as DMAT's KAMI. It
-compiles on the host and submits test configurations with `qsub`. By default, ordinary workers use
+submits both compilation and test configurations with `qsub`. By default, ordinary workers use
 one CPU, 8 GB, and four hours. Multi-threaded tests request one complete CPU
 node (96 CPUs and 512 GB). At most 15 worker jobs are submitted; configurations
 are distributed across them and run sequentially within each worker.
@@ -186,6 +186,7 @@ make build PROFILE=hpc-torque
 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```
 
+Compilation requests one PBS job and waits for it to finish before returning.
 The profile assumes host R, a C++20 compiler, Eigen, and any solver libraries
 needed by the suite. Override paths during the build when the cluster's installations
 differ, for example `TESTBENCH_PATH_EIGEN_INCLUDE=/path/to/eigen3`.
@@ -198,6 +199,10 @@ without scheduling jobs with:
 ```bash
 PBS_DRY_RUN=1 make run_test TEST_SUITE=smoothing-example TEST_NAME=all
 ```
+
+Compilation requests can be tuned with `PBS_COMPILE_CPUS`,
+`PBS_COMPILE_MEM`, `PBS_COMPILE_TIME`, and `PBS_COMPILE_JOBS`. Use
+`PBS_COMPILE_DRY_RUN=1 make compile_all` to preview the compile submission.
 
 The GPU node is intentionally not configured because its PBS resource syntax
 has not yet been established.

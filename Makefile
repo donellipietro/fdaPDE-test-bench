@@ -43,6 +43,11 @@ PBS_MAX_JOBS ?=
 PBS_QUEUE ?=
 PBS_ACCOUNT ?=
 PBS_AGGREGATE ?= 1
+PBS_COMPILE_CPUS ?=
+PBS_COMPILE_MEM ?=
+PBS_COMPILE_TIME ?=
+PBS_COMPILE_JOBS ?=
+PBS_COMPILE_DRY_RUN ?= 0
 COMPILE_JOBS ?=
 COMPILE_TARGET ?= $(if $(TARGET),$(TARGET),$(if $(EXEC),$(EXEC),$(SOURCE)))
 
@@ -181,6 +186,15 @@ compile_all: ensure_env
 		SLURM_ACCOUNT="$(SLURM_ACCOUNT)" \
 		SLURM_QOS="$(SLURM_QOS)" \
 		./cpp/compile_slurm.sh --all; \
+	elif [ "$(COMPILE_STRATEGY)" = "pbs" ]; then \
+		PBS_COMPILE_CPUS="$(PBS_COMPILE_CPUS)" \
+		PBS_COMPILE_MEM="$(PBS_COMPILE_MEM)" \
+		PBS_COMPILE_TIME="$(PBS_COMPILE_TIME)" \
+		PBS_COMPILE_JOBS="$(PBS_COMPILE_JOBS)" \
+		PBS_COMPILE_DRY_RUN="$(PBS_COMPILE_DRY_RUN)" \
+		PBS_QUEUE="$(PBS_QUEUE)" \
+		PBS_ACCOUNT="$(PBS_ACCOUNT)" \
+		./cpp/compile_pbs.sh --all; \
 	else \
 		COMPILE_JOBS="$(COMPILE_JOBS)" ./cpp/compile.sh --all; \
 	fi
@@ -208,6 +222,15 @@ compile: ensure_env
 			SLURM_ACCOUNT="$(SLURM_ACCOUNT)" \
 			SLURM_QOS="$(SLURM_QOS)" \
 			./cpp/compile_slurm.sh "$${args[@]}"; \
+		elif [ "$(COMPILE_STRATEGY)" = "pbs" ]; then \
+			PBS_COMPILE_CPUS="$(PBS_COMPILE_CPUS)" \
+			PBS_COMPILE_MEM="$(PBS_COMPILE_MEM)" \
+			PBS_COMPILE_TIME="$(PBS_COMPILE_TIME)" \
+			PBS_COMPILE_JOBS="$(PBS_COMPILE_JOBS)" \
+			PBS_COMPILE_DRY_RUN="$(PBS_COMPILE_DRY_RUN)" \
+			PBS_QUEUE="$(PBS_QUEUE)" \
+			PBS_ACCOUNT="$(PBS_ACCOUNT)" \
+			./cpp/compile_pbs.sh "$${args[@]}"; \
 		else \
 			COMPILE_JOBS="$(COMPILE_JOBS)" ./cpp/compile.sh "$${args[@]}"; \
 		fi; \

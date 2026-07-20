@@ -224,7 +224,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
       DOCKER_IMAGE = "",
       DOCKER_BIND_PATHS = "",
       TEST_EXECUTION_STRATEGY = "pbs",
-      COMPILE_STRATEGY = "local",
+      COMPILE_STRATEGY = "pbs",
       DEFAULT_CPUS = Sys.getenv("DEFAULT_CPUS", unset = "1"),
       DEFAULT_MEM = Sys.getenv("DEFAULT_MEM", unset = "8gb"),
       DEFAULT_TIME = Sys.getenv("DEFAULT_TIME", unset = "04:00:00"),
